@@ -1,0 +1,1010 @@
+// GB International Travel — Prisma schema
+// Incremental foundation. Models are ready for future phases.
+// Do not invent live airline/booking data in application code.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  SUPER_ADMIN
+  MANAGER
+  TICKET_ISSUER
+  ACCOUNTANT
+  SUPPORT
+  STAFF
+  AGENT
+}
+
+enum BookingStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAYMENT_PROCESSING
+  PAYMENT_RECEIVED
+  TICKETING_PENDING
+  CONFIRMED
+  CANCELLED
+  REFUNDED
+  FAILED
+  EXPIRED
+}
+
+enum PassengerType {
+  ADULT
+  CHILD
+  INFANT
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  AUTHORIZED
+  PAID
+  CAPTURED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentAttemptStatus {
+  CREATED
+  REDIRECTED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentMethod {
+  CARD
+  BANK_TRANSFER
+  WALLET
+  OTHER
+}
+
+enum CabinClass {
+  ECONOMY
+  PREMIUM_ECONOMY
+  BUSINESS
+  FIRST
+}
+
+enum TripType {
+  ONE_WAY
+  ROUND_TRIP
+  MULTI_CITY
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  UNSPECIFIED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum NotificationEventType {
+  BOOKING_CONFIRMED
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+  TICKETING_PENDING
+  TRIP_7_DAYS
+  TRIP_24_HOURS
+  TRIP_5_HOURS
+  BOARDING_REMINDER
+  FLIGHT_STATUS_CHANGED
+  WEATHER_ALERT
+  ARRIVAL_REMINDER
+}
+
+enum FlightStatus {
+  SCHEDULED
+  DELAYED
+  CANCELLED
+  BOARDING
+  DEPARTED
+  ARRIVED
+  DIVERTED
+  UNKNOWN
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String?
+  firstName         String?
+  lastName          String?
+  phone             String?
+  phoneCountryCode  String?
+  preferredCurrency String    @default("PKR")
+  preferredLanguage String    @default("en")
+  role              UserRole  @default(CUSTOMER)
+  emailVerified     DateTime?
+  isDemo            Boolean   @default(false)
+  isActive          Boolean   @default(true)
+  disabledAt        DateTime?
+  /// Explicit customer notification preferences (Phase 9B).
+  emailNotificationsOptIn Boolean @default(true)
+  travelRemindersOptIn    Boolean @default(true)
+  weatherUpdatesOptIn     Boolean @default(false)
+  flightStatusAlertsOptIn Boolean @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  passengers    Passenger[]
+  bookings      Booking[]
+  notifications Notification[]
+  searchLogs    SearchLog[]
+  travelAlerts  TravelAlert[]
+  auditLogs     AuditLog[]
+  accounts      Account[]
+  sessions      Session[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+}
+
+/// Auth.js / NextAuth account linkage (OAuth-ready; credentials use User.passwordHash)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// Auth.js database sessions (optional; JWT strategy is primary for credentials)
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Passenger {
+  id                     String         @id @default(cuid())
+  userId                 String?
+  firstName              String
+  middleName             String?
+  lastName               String
+  dateOfBirth            DateTime?
+  gender                 Gender         @default(UNSPECIFIED)
+  nationality            String?
+  passportNumber         String?
+  passportIssuingCountry String?
+  passportExpiry         DateTime?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  bookingPassengers BookingPassenger[]
+
+  @@index([userId])
+}
+
+model Country {
+  id        String   @id @default(cuid())
+  code      String   @unique // ISO 3166-1 alpha-2
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cities City[]
+}
+
+model City {
+  id          String   @id @default(cuid())
+  countryId   String
+  name        String
+  slug        String   @unique
+  timezone    String?
+  latitude    Float?
+  longitude   Float?
+  isPopular   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  country      Country       @relation(fields: [countryId], references: [id])
+  airports     Airport[]
+  destinations Destination[]
+
+  @@index([countryId])
+  @@index([isPopular])
+}
+
+model Airport {
+  id        String   @id @default(cuid())
+  cityId    String?
+  iataCode  String   @unique
+  icaoCode  String?
+  name      String
+  slug      String   @unique
+  latitude  Float?
+  longitude Float?
+  timezone  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  city City? @relation(fields: [cityId], references: [id], onDelete: SetNull)
+
+  originSegments      FlightSegment[] @relation("OriginAirport")
+  destinationSegments FlightSegment[] @relation("DestinationAirport")
+  originRoutes        Route[]         @relation("OriginRoute")
+  destinationRoutes   Route[]         @relation("DestinationRoute")
+
+  @@index([cityId])
+  @@index([isActive])
+}
+
+model Airline {
+  id           String   @id @default(cuid())
+  iataCode     String   @unique
+  icaoCode     String?
+  name         String
+  slug         String   @unique
+  logoUrl      String?
+  countryCode  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  flights Flight[]
+
+  @@index([isActive])
+}
+
+model Destination {
+  id              String   @id @default(cuid())
+  cityId          String
+  slug            String   @unique
+  title           String
+  summary         String?
+  description     String?
+  travelInfo      String?
+  visaInfo        String?
+  weatherInfo     String?
+  airportCode     String?
+  seoTitle        String?
+  seoDescription  String?
+  heroImageUrl    String?
+  isFeatured      Boolean  @default(false)
+  published       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  city              City               @relation(fields: [cityId], references: [id])
+  guides            DestinationGuide[]
+  weatherSnapshots  WeatherSnapshot[]
+  deals             Deal[]
+  travelGuides      TravelGuide[]
+
+  @@index([cityId])
+  @@index([isFeatured, published])
+}
+
+model DestinationGuide {
+  id             String        @id @default(cuid())
+  destinationId  String
+  title          String
+  slug           String
+  content        String
+  coverImageUrl  String?
+  seoTitle       String?
+  seoDescription String?
+  status         ArticleStatus @default(DRAFT)
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@unique([destinationId, slug])
+  @@index([status])
+}
+
+/// Marketing deal cards (not payment coupons).
+model Deal {
+  id             String    @id @default(cuid())
+  title          String
+  slug           String    @unique
+  airlineCode    String?
+  airlineName    String?
+  originCode     String?
+  destinationCode String?
+  destinationId  String?
+  price          Decimal   @db.Decimal(12, 2)
+  currency       String    @default("PKR")
+  travelStart    DateTime?
+  travelEnd      DateTime?
+  expiresAt      DateTime?
+  description    String?
+  imageUrl       String?
+  isPublished    Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  destination Destination? @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+
+  @@index([isPublished, expiresAt])
+  @@index([originCode, destinationCode])
+}
+
+/// Standalone travel guides linked to a destination when available.
+model TravelGuide {
+  id             String        @id @default(cuid())
+  destinationId  String?
+  title          String
+  slug           String        @unique
+  content        String
+  coverImageUrl  String?
+  seoTitle       String?
+  seoDescription String?
+  status         ArticleStatus @default(DRAFT)
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  destination Destination? @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@index([destinationId])
+}
+
+/// Practical company / system settings (non-secret values only).
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  label     String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model Route {
+  id                   String   @id @default(cuid())
+  originAirportId      String
+  destinationAirportId String
+  slug                 String   @unique
+  isPopular            Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  originAirport      Airport @relation("OriginRoute", fields: [originAirportId], references: [id])
+  destinationAirport Airport @relation("DestinationRoute", fields: [destinationAirportId], references: [id])
+
+  @@unique([originAirportId, destinationAirportId])
+  @@index([isPopular])
+}
+
+model Flight {
+  id              String       @id @default(cuid())
+  airlineId       String
+  flightNumber    String
+  cabinClass      CabinClass   @default(ECONOMY)
+  status          FlightStatus @default(SCHEDULED)
+  providerCode    String?
+  providerFlightId String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  airline  Airline         @relation(fields: [airlineId], references: [id])
+  segments FlightSegment[]
+  tickets  Ticket[]
+
+  @@index([airlineId])
+  @@index([flightNumber])
+  @@index([status])
+}
+
+model FlightSegment {
+  id                   String   @id @default(cuid())
+  flightId             String
+  segmentOrder         Int
+  originAirportId      String
+  destinationAirportId String
+  departureAt          DateTime
+  arrivalAt            DateTime
+  durationMinutes      Int?
+  aircraftCode         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  flight             Flight  @relation(fields: [flightId], references: [id], onDelete: Cascade)
+  originAirport      Airport @relation("OriginAirport", fields: [originAirportId], references: [id])
+  destinationAirport Airport @relation("DestinationAirport", fields: [destinationAirportId], references: [id])
+
+  @@index([flightId])
+  @@index([originAirportId, destinationAirportId])
+  @@index([departureAt])
+}
+
+model Booking {
+  id                   String        @id @default(cuid())
+  userId               String?
+  reference            String        @unique
+  accessTokenHash      String
+  tripType             TripType
+  status               BookingStatus @default(DRAFT)
+  currency             String        @default("PKR")
+  subtotalAmount       Decimal       @db.Decimal(12, 2)
+  taxesAmount          Decimal       @db.Decimal(12, 2)
+  feesAmount           Decimal       @db.Decimal(12, 2)
+  totalAmount          Decimal       @db.Decimal(12, 2)
+  contactEmail         String
+  contactPhone         String?
+  contactPhoneCountry  String?
+  selectedOfferId      String?
+  offerSnapshot        Json?
+  providerCode         String?
+  providerBookingId    String?
+  /// Supplier-neutral fields (null until a live supplier booking exists)
+  supplierCode         String?
+  supplierOfferId      String?
+  supplierSessionRef   String?
+  supplierBookingRef   String?
+  supplierBookingStatus String?
+  supplierTicketingStatus String?
+  offerExpiresAt       DateTime?
+  notes                String?
+  adults               Int           @default(1)
+  children             Int           @default(0)
+  infants              Int           @default(0)
+  cabinClass           CabinClass    @default(ECONOMY)
+  termsAcceptedAt      DateTime?
+  expiresAt            DateTime?
+  confirmedAt          DateTime?
+  cancelledAt          DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  bookingPassengers BookingPassenger[]
+  payments          Payment[]
+  tickets           Ticket[]
+  providerBookings  ProviderBooking[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([expiresAt])
+}
+
+model BookingPassenger {
+  id            String        @id @default(cuid())
+  bookingId     String
+  passengerId   String
+  passengerType PassengerType
+  seatNumber    String?
+  ticketType    String?
+
+  booking   Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  passenger Passenger @relation(fields: [passengerId], references: [id])
+
+  @@unique([bookingId, passengerId])
+  @@index([bookingId])
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  bookingId       String
+  amount          Decimal       @db.Decimal(12, 2)
+  currency        String        @default("PKR")
+  status          PaymentStatus @default(PENDING)
+  method          PaymentMethod @default(CARD)
+  provider        String?
+  providerRef     String?
+  idempotencyKey  String?       @unique
+  isMock          Boolean       @default(true)
+  // Never store raw card numbers / CVV
+  last4           String?
+  paidAt          DateTime?
+  failureReason   String?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  booking  Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  attempts PaymentAttempt[]
+  events   PaymentEvent[]
+
+  @@index([bookingId])
+  @@index([status])
+  @@index([providerRef])
+}
+
+model PaymentAttempt {
+  id               String               @id @default(cuid())
+  paymentId        String
+  attemptNumber    Int                  @default(1)
+  status           PaymentAttemptStatus @default(CREATED)
+  provider         String
+  providerCheckoutId String?
+  checkoutUrl      String?
+  returnUrl        String?
+  amount           Decimal              @db.Decimal(12, 2)
+  currency         String               @default("PKR")
+  idempotencyKey   String               @unique
+  errorMessage     String?
+  rawRequest       Json?
+  rawResponse      Json?
+  startedAt        DateTime             @default(now())
+  completedAt      DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([status])
+}
+
+model PaymentEvent {
+  id              String   @id @default(cuid())
+  paymentId       String?
+  provider        String
+  eventType       String
+  providerEventId String?
+  signatureValid  Boolean  @default(false)
+  processed       Boolean  @default(false)
+  processingResult String?
+  payload         Json?
+  headers         Json?
+  createdAt       DateTime @default(now())
+
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, providerEventId])
+  @@index([paymentId])
+  @@index([processed])
+}
+
+model Ticket {
+  id            String   @id @default(cuid())
+  bookingId     String
+  flightId      String?
+  ticketNumber  String?
+  pnr           String?
+  issuedAt      DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  flight  Flight? @relation(fields: [flightId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId])
+  @@index([pnr])
+}
+
+model WeatherSnapshot {
+  id            String   @id @default(cuid())
+  destinationId String?
+  locationKey   String
+  capturedAt    DateTime @default(now())
+  temperatureC  Float?
+  feelsLikeC    Float?
+  condition     String?
+  humidity      Int?
+  windKph       Float?
+  payload       Json?
+  providerCode  String?
+  createdAt     DateTime @default(now())
+
+  destination Destination? @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+
+  @@index([destinationId])
+  @@index([locationKey, capturedAt])
+}
+
+model NotificationTemplate {
+  id        String                  @id @default(cuid())
+  eventType NotificationEventType
+  channel   NotificationChannel
+  subject   String?
+  body      String
+  isActive  Boolean                 @default(true)
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+
+  notifications Notification[]
+
+  @@unique([eventType, channel])
+}
+
+model Notification {
+  id               String                  @id @default(cuid())
+  userId           String?
+  templateId       String?
+  eventType        NotificationEventType
+  channel          NotificationChannel
+  status           NotificationStatus      @default(PENDING)
+  recipient        String
+  subject          String?
+  body             String
+  htmlBody         String?
+  metadata         Json?
+  /// Prevents duplicate reminder/email sends for the same logical event.
+  idempotencyKey   String?                 @unique
+  providerCode     String?
+  /// Safe, redacted failure summary — never store secrets or passport/payment data.
+  failureReason    String?
+  bookingReference String?
+  bookingId        String?
+  sentAt           DateTime?
+  /// Customer notification center: null means unread.
+  readAt           DateTime?
+  retryCount       Int                     @default(0)
+  lastRetryAt      DateTime?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  user     User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  template NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, readAt])
+  @@index([eventType, status])
+  @@index([bookingReference])
+  @@index([createdAt])
+}
+
+model TravelAlert {
+  id        String   @id @default(cuid())
+  userId    String?
+  title     String
+  message   String
+  severity  String   @default("info")
+  startsAt  DateTime?
+  endsAt    DateTime?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+enum TravelUpdateType {
+  FLIGHT
+  ROAD
+  WEATHER
+  TOURISM
+  ADVISORY
+}
+
+enum TravelUpdatePriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+/// Public Gilgit-Baltistan travel updates (CMS-managed).
+model TravelUpdate {
+  id          String               @id @default(cuid())
+  type        TravelUpdateType
+  title       String
+  slug        String               @unique
+  summary     String?
+  body        String
+  priority    TravelUpdatePriority @default(NORMAL)
+  region      String?
+  isPublished Boolean              @default(false)
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([isPublished, publishedAt])
+  @@index([type, priority])
+  @@index([expiresAt])
+}
+
+enum TourDestination {
+  HUNZA
+  SKARDU
+  GILGIT
+  NALTAR
+  KHUNJERAB
+  FAIRY_MEADOWS
+  DEOSAI
+}
+
+enum TourSeason {
+  SPRING
+  SUMMER
+  AUTUMN
+  WINTER
+}
+
+enum TourPackageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum TourInquiryStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+/// GB tour packages — inquiry/request based (not live inventory).
+model TourPackage {
+  id               String            @id @default(cuid())
+  name             String
+  slug             String            @unique
+  destination      TourDestination
+  season           TourSeason
+  durationDays     Int
+  price            Decimal           @db.Decimal(12, 2)
+  currency         String            @default("PKR")
+  description      String?
+  highlights       Json?
+  itinerary        Json?
+  hotel            String?
+  transport        String?
+  meals            String?
+  included         String?
+  excluded         String?
+  images           Json?
+  availabilityNote String?
+  status           TourPackageStatus @default(DRAFT)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  inquiries TourInquiry[]
+
+  @@index([status, destination])
+  @@index([season])
+}
+
+/// Tour booking inquiry / request (not confirmed live inventory).
+model TourInquiry {
+  id              String            @id @default(cuid())
+  tourId          String
+  reference       String            @unique
+  status          TourInquiryStatus @default(PENDING)
+  travelerName    String
+  travelerEmail   String
+  travelerPhone   String?
+  travelersCount  Int               @default(1)
+  preferredDates  String?
+  message         String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  tour TourPackage @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
+  @@index([status])
+  @@index([travelerEmail])
+}
+
+enum VisaDestinationKey {
+  UAE_DUBAI
+  TURKEY
+  THAILAND
+  SINGAPORE
+}
+
+/// Visa information guides (CMS) — always verify with official sources.
+model VisaGuide {
+  id                 String             @id @default(cuid())
+  destinationKey     VisaDestinationKey
+  countryName        String
+  cityName           String?
+  slug               String             @unique
+  visaType           String?
+  eligibility        String?
+  requiredDocuments  String?
+  processingInfo     String?
+  duration           String?
+  feesNote           String?
+  importantNotes     String?
+  officialSourceUrl  String?
+  seoTitle           String?
+  seoDescription     String?
+  isPublished        Boolean            @default(false)
+  lastUpdatedAt      DateTime           @default(now())
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@unique([destinationKey])
+  @@index([isPublished])
+}
+
+model FAQ {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  category  String?
+  sortOrder Int      @default(0)
+  isPublished Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, sortOrder])
+  @@index([isPublished])
+}
+
+model Article {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  summary     String?
+  content     String
+  coverImage  String?
+  status      ArticleStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, publishedAt])
+}
+
+model SearchLog {
+  id           String    @id @default(cuid())
+  userId       String?
+  tripType     TripType
+  origin       String
+  destination  String
+  departureDate DateTime?
+  returnDate   DateTime?
+  passengers   Int       @default(1)
+  cabinClass   CabinClass @default(ECONOMY)
+  resultsCount Int?
+  providerCode String?
+  createdAt    DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([origin, destination])
+  @@index([createdAt])
+}
+
+model Coupon {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  description   String?
+  discountType  String
+  discountValue Decimal   @db.Decimal(12, 2)
+  currency      String    @default("PKR")
+  maxUses       Int?
+  usedCount     Int       @default(0)
+  startsAt      DateTime?
+  endsAt        DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([isActive])
+}
+
+model Commission {
+  id           String   @id @default(cuid())
+  providerCode String
+  bookingRef   String?
+  amount       Decimal  @db.Decimal(12, 2)
+  currency     String   @default("PKR")
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([providerCode])
+}
+
+model FlightProvider {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  isActive    Boolean  @default(false)
+  config      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  providerBookings  ProviderBooking[]
+  providerResponses ProviderResponse[]
+}
+
+model ProviderBooking {
+  id                String   @id @default(cuid())
+  bookingId         String
+  flightProviderId  String
+  providerBookingId String?
+  status            String
+  rawPayload        Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  booking        Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  flightProvider FlightProvider @relation(fields: [flightProviderId], references: [id])
+
+  @@index([bookingId])
+  @@index([flightProviderId])
+}
+
+model ProviderResponse {
+  id               String   @id @default(cuid())
+  flightProviderId String
+  requestType      String
+  requestPayload   Json?
+  responsePayload  Json?
+  success          Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  flightProvider FlightProvider @relation(fields: [flightProviderId], references: [id])
+
+  @@index([flightProviderId, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action, createdAt])
+}

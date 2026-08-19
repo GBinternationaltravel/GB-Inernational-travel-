@@ -1,0 +1,62 @@
+{
+  "name": "gb-international-travel",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "start": "next start",
+    "lint": "eslint .",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "postinstall": "prisma generate",
+    "build": "prisma generate && next build",
+    "test:supplier": "tsx --test src/providers/flights/__tests__/mock-flight-supplier.test.ts src/providers/flights/__tests__/travelport-flight-supplier.test.ts src/providers/flights/__tests__/travelport-booking.test.ts",
+    "test:experience": "tsx --test src/providers/experience/__tests__/phase8-experience.test.ts src/providers/experience/__tests__/phase9a-experience.test.ts src/providers/experience/__tests__/phase9b-experience.test.ts src/providers/experience/__tests__/phase10-experience.test.ts src/providers/experience/__tests__/phase11-cutover.test.ts",
+    "reminders:run": "tsx scripts/run-reminders.ts",
+    "verify:weather": "tsx --env-file=.env scripts/verify-weather-9b.ts",
+    "verify:email": "tsx --env-file=.env scripts/verify-email-9b.ts",
+    "verify:reminders": "tsx --env-file=.env scripts/verify-reminders-9b.ts",
+    "verify:travelport": "tsx --env-file=.env scripts/verify-travelport-pp.ts",
+    "verify:flight-status": "tsx --env-file=.env scripts/verify-flight-status-11.ts",
+    "verify:phase11": "tsx --env-file=.env scripts/verify-phase11.ts",
+    "verify:phase11b": "tsx --env-file=.env scripts/verify-phase11b.ts",
+    "qa:staging": "tsx --env-file=.env scripts/qa-staging-prepare.ts",
+    "qa:staging-polish": "tsx --env-file=.env scripts/qa-staging-polish.ts",
+    "qa:booking-flow": "tsx --env-file=.env scripts/qa-booking-flow.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "bcryptjs": "^3.0.3",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.544.0",
+    "next": "^15.5.4",
+    "next-auth": "^5.0.0-beta.25",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.18.6",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "eslint": "^9.36.0",
+    "eslint-config-next": "^15.5.4",
+    "prisma": "^6.19.0",
+    "tailwindcss": "^4.1.13",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.2"
+  }
+}
