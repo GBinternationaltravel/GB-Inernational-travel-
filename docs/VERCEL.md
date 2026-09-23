@@ -1,119 +1,111 @@
-# Vercel staging deployment
+# Vercel production deployment
 
-GB International Travel is prepared for **Vercel staging** only.
-Live Travelport, live Safepay, and automatic live ticketing remain blocked.
+Official production URL: **https://www.gbinternationaltravels.com/**
 
-## Project settings (Vercel)
+Connect **one** Vercel project to this GitHub repository. Do not create duplicate projects.
 
 | Setting | Value |
 |---------|--------|
+| GitHub repository | `GBinternationaltravel/GB-Inernational-travel-` |
+| Production branch | `main` |
 | Framework | Next.js (auto-detected) |
 | Build Command | `prisma generate && next build` (from `package.json`) |
 | Install Command | `npm install` (runs `postinstall` → `prisma generate`) |
-| Output | Next.js default |
-| Node | 20.x recommended |
+| Node.js | **20.x** |
+| Canonical URL | `https://www.gbinternationaltravels.com` |
 
-## Staging provider profile (required)
+Live Travelport, live Safepay, and automatic live ticketing remain blocked in code.
 
-Set these on the Vercel project (Environment = Production *or* a Staging/Preview env — keep MOCK):
+Do **not** use the Vercel CLI from this workspace. Configure Vercel in the web dashboard only.
+
+## Dashboard connection (manual)
+
+If a Vercel project already owns `gbinternationaltravels.com` / `www.gbinternationaltravels.com`:
+
+1. Open that **existing** project.
+2. **Settings → Git** → connect `GBinternationaltravel/GB-Inernational-travel-`.
+3. Production branch: `main`.
+4. **Settings → Domains** → keep only the official domain. Do not delete DNS/email records from the domain registrar.
+
+If **no** project owns the domain:
+
+1. **Add New Project** → Import `GBinternationaltravel/GB-Inernational-travel-`.
+2. Framework: Next.js. Node.js: 20.x.
+3. Add environment variables (below) **before** the first production deploy.
+4. After the first successful deploy, **Settings → Domains** → add `www.gbinternationaltravels.com` and `gbinternationaltravels.com`.
+5. Do **not** create a second project later.
+
+The public site currently returns Vercel `DEPLOYMENT_NOT_FOUND`. DNS already points at Vercel. A successful production deploy on the project that owns the domain is required.
+
+## Production environment variables
+
+Set on Vercel **Production**. Preview/Development should not use the official domain as canonical.
+
+Required:
 
 ```
-APP_ENV=staging
-FLIGHT_SUPPLIER=mock
-PAYMENT_PROVIDER=MOCK
-ALLOW_MOCK_PAYMENTS=true
-EMAIL_PROVIDER=console
-WEATHER_PROVIDER=mock
-FLIGHT_STATUS_PROVIDER=mock
+APP_ENV=production
+NEXT_PUBLIC_APP_URL=https://www.gbinternationaltravels.com
+NEXT_PUBLIC_APP_NAME=GB International Travel
+NEXT_PUBLIC_DEFAULT_CURRENCY=PKR
+NEXT_PUBLIC_DEFAULT_LOCALE=en
+DATABASE_URL=<hosted PostgreSQL — not localhost>
 BOOKING_STORE=prisma
 AUTH_STORE=prisma
 NOTIFICATION_STORE=prisma
 PAYMENT_STORE=prisma
+AUTH_SECRET=<new production secret>
+SESSION_SECRET=<new production secret>
+REMINDER_CRON_SECRET=<new production secret>
+CRON_SECRET=<same value Vercel Cron will send>
+ALLOW_MOCK_PAYMENTS=true
+FLIGHT_SUPPLIER=mock
+PAYMENT_PROVIDER=MOCK
+EMAIL_PROVIDER=console
+WEATHER_PROVIDER=mock
+FLIGHT_STATUS_PROVIDER=mock
 ```
 
-Admin → Settings → ticket issuer mode = **MANUAL**.
+Do not invent API keys. Leave Travelport / Safepay / Resend empty until real credentials exist.
 
-Do **not** set live Travelport / Safepay production credentials.
+Local `.env` values must **not** be committed. Copy names from `.env.example`. Generate new secrets for production; do not reuse local/dev secrets.
 
-## Server environment variable names
+## Database
 
-- `APP_ENV`
-- `DATABASE_URL`
-- `BOOKING_STORE`
-- `AUTH_STORE`
-- `NOTIFICATION_STORE`
-- `PAYMENT_STORE`
-- `AUTH_SECRET`
-- `SESSION_SECRET`
-- `REMINDER_CRON_SECRET`
-- `CRON_SECRET` *(Vercel Cron Bearer; set the same strong random value Vercel will send)*
-- `ALLOW_MOCK_PAYMENTS`
-- `FLIGHT_SUPPLIER`
-- `PAYMENT_PROVIDER`
-- `EMAIL_PROVIDER`
-- `WEATHER_PROVIDER`
-- `FLIGHT_STATUS_PROVIDER`
-- `BOOKING_DRAFT_EXPIRY_MINUTES`
+Vercel cannot use the local PostgreSQL database.
 
-Optional later (sandbox only — leave empty for MOCK staging):
-
-- `TRAVELPORT_*`, `SAFEPAY_*`, `RESEND_API_KEY`, `EMAIL_FROM`, `WEATHER_API_KEY`, `FLIGHT_STATUS_API_KEY`
-
-## Public variable names
-
-- `NEXT_PUBLIC_APP_URL` → your Vercel HTTPS URL (e.g. `https://your-app.vercel.app`)
-- `NEXT_PUBLIC_APP_NAME`
-- `NEXT_PUBLIC_DEFAULT_CURRENCY`
-- `NEXT_PUBLIC_DEFAULT_LOCALE`
-
-## Database (before first deploy)
-
-1. Provision hosted PostgreSQL (Neon, Supabase, Vercel Postgres, RDS, etc.).
-2. Prefer a **pooled** connection string for serverless (`DATABASE_URL`).
-3. From a trusted machine (not required on Vercel build):
+1. Provision hosted PostgreSQL (Vercel Postgres, Neon, or similar).
+2. Put the **pooled** connection string in `DATABASE_URL` (Production).
+3. From a trusted machine, after the hosted URL exists:
 
 ```bash
 npx prisma generate
 npx prisma db push
-# optional:
-npm run db:seed
 ```
 
-Never run `prisma migrate reset` against shared data.
+Never run `prisma migrate reset` or `db push --force-reset`.
 
-Vercel build generates the Prisma Client; it does **not** push schema. Schema must already exist on the staging DB.
+The Vercel build generates Prisma Client only. It does not push schema.
 
 ## Cron (reminders)
 
-`vercel.json` schedules:
+`vercel.json` schedules one job:
 
 `GET /api/internal/reminders/run` every 15 minutes.
 
-Auth:
+1. Set `CRON_SECRET` in Vercel (platform sends `Authorization: Bearer <CRON_SECRET>`).
+2. Set `REMINDER_CRON_SECRET` (may match `CRON_SECRET`) for manual POST callers.
 
-1. Set `CRON_SECRET` in Vercel (platform injects `Authorization: Bearer <CRON_SECRET>` on Cron invocations).
-2. Also set `REMINDER_CRON_SECRET` (can match `CRON_SECRET`) for manual/external POST callers.
+Hobby-plan cron frequency may be limited. Do not add a second cron job.
 
-Hobby plan cron frequency may be limited by Vercel — check your plan. External schedulers may still `POST` with Bearer `REMINDER_CRON_SECRET`.
-
-## Auth on Vercel
+## Auth
 
 - NextAuth `trustHost: true` is enabled.
-- Set `AUTH_SECRET` and `NEXT_PUBLIC_APP_URL` to the HTTPS deployment URL.
-- JWT sessions work on serverless.
+- Set `AUTH_SECRET`.
+- Set `NEXT_PUBLIC_APP_URL=https://www.gbinternationaltravels.com`.
 
 ## Filesystem
 
-Local `.data/*.json` file stores do **not** persist on Vercel. Staging must use Prisma + PostgreSQL only.
-
-## Deploy checklist
-
-1. Create Vercel project linked to this repo  
-2. Add env vars (names above) — secrets via Vercel dashboard only  
-3. Push schema to staging Postgres (`db push`)  
-4. Deploy  
-5. Open `/api/health/ready`  
-6. Smoke: mock search → book → mock pay → MANUAL ticket  
-7. Confirm Cron invocations in Vercel dashboard  
+Local `.data/*.json` file stores do not persist on Vercel. Production must use Prisma + hosted PostgreSQL.
 
 See also: `docs/STAGING.md`, `docs/DATABASE_MIGRATIONS.md`.

@@ -1,9 +1,11 @@
+import { getPublicAppUrl } from "@/config/app-url";
+
 export const siteConfig = {
   name: "GB International Travel",
   shortName: "GB Travel",
   description:
     "Pakistan-based travel and flight booking portal for domestic and international journeys.",
-  url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  url: getPublicAppUrl(),
   locale: process.env.NEXT_PUBLIC_DEFAULT_LOCALE ?? "en",
   currency: process.env.NEXT_PUBLIC_DEFAULT_CURRENCY ?? "PKR",
   market: "Pakistan",

@@ -47,7 +47,7 @@ async function main() {
     try {
       assert.equal(store.kind, "prisma");
       pass(name, "prisma");
-    } catch (e) {
+    } catch {
       failures += 1;
       fail(name, `expected prisma, got ${store.kind}`);
     }

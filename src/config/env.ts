@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import { getPublicAppUrl } from "@/config/app-url";
 
 const serverEnvSchema = z.object({
   DATABASE_URL: z.string().min(1).optional(),
@@ -12,7 +13,7 @@ const serverEnvSchema = z.object({
 });
 
 const clientEnvSchema = z.object({
-  NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+  NEXT_PUBLIC_APP_URL: z.string().url().default(getPublicAppUrl()),
   NEXT_PUBLIC_APP_NAME: z.string().default("GB International Travel"),
   NEXT_PUBLIC_DEFAULT_CURRENCY: z.string().default("PKR"),
   NEXT_PUBLIC_DEFAULT_LOCALE: z.string().default("en"),
@@ -37,7 +38,7 @@ export function getServerEnv(): ServerEnv {
 
 export function getClientEnv(): ClientEnv {
   const parsed = clientEnvSchema.safeParse({
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? getPublicAppUrl(),
     NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
     NEXT_PUBLIC_DEFAULT_CURRENCY: process.env.NEXT_PUBLIC_DEFAULT_CURRENCY,
     NEXT_PUBLIC_DEFAULT_LOCALE: process.env.NEXT_PUBLIC_DEFAULT_LOCALE,

@@ -1,5 +1,5 @@
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
 const envPath = path.join(process.cwd(), ".env");
 const env = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
 const keys = [

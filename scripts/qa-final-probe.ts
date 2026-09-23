@@ -233,7 +233,6 @@ async function main() {
 
   // 9. CMS CRUD smoke (airline create/update/deactivate) — cleanup
   try {
-    const code = `Q${String(Date.now()).slice(-1)}`; // 2-char may collide — use fixed QA
     const iata = "QZ";
     const existing = await prisma.airline.findUnique({ where: { iataCode: iata } });
     const airline =

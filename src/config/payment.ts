@@ -3,6 +3,8 @@
  * Never use production Safepay credentials in this codebase phase.
  */
 
+import { getPublicAppUrl } from "@/config/app-url";
+
 export const paymentConfig = {
   /** Default provider when credentials are missing. */
   defaultProvider: "MOCK" as const,
@@ -54,6 +56,6 @@ export function getPaymentEnv() {
       process.env.PAYMENT_WEBHOOK_SECRET?.trim() ||
       process.env.SESSION_SECRET?.trim() ||
       "dev-only-mock-payment-webhook-secret",
-    appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+    appUrl: getPublicAppUrl(),
   };
 }

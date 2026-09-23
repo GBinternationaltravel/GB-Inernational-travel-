@@ -1,6 +1,9 @@
 # Staging deployment guide
 
-GB International Travel is **READY FOR STAGING**, not production-live.
+The official **production** domain is **https://www.gbinternationaltravels.com/**.
+Do not point staging at that domain. Use a separate host, database, and secrets.
+
+This guide is for an optional staging profile only.
 
 Safety gates that must remain closed:
 
@@ -26,7 +29,7 @@ Do not charge real customer cards. Do not issue invented live airline tickets.
 
 ## Vercel
 
-For Vercel-specific build, env names, Postgres, and Cron setup see **[docs/VERCEL.md](./VERCEL.md)**.
+For the official production Vercel project, GitHub repo, and domain, see **[docs/VERCEL.md](./VERCEL.md)**.
 
 ## Environment
 
