@@ -4,5 +4,9 @@
       "path": "/api/internal/reminders/run",
       "schedule": "0 3 * * *"
     }
+  ],
+  "redirects": [
+    { "source": "/tours", "destination": "https://gilgitbatistantourism.com/", "permanent": false },
+    { "source": "/tours/:path*", "destination": "https://gilgitbatistantourism.com/", "permanent": false }
   ]
 }
