@@ -79,11 +79,13 @@ body {
   letter-spacing: -0.02em;
 }
 
-h1,
-h2,
-h3 {
-  color: var(--color-navy);
-  letter-spacing: -0.02em;
+@layer base {
+  h1,
+  h2,
+  h3 {
+    color: var(--color-navy);
+    letter-spacing: -0.02em;
+  }
 }
 
 a {
