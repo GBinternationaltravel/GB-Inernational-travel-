@@ -21,6 +21,7 @@ import {
 import { cabinClasses, passengerTypeLabels } from "@/config/booking";
 import type { SafeBookingView } from "@/types/booking";
 import { CUSTOMER_FARE_LABEL } from "@/lib/booking/customer-price";
+import { snapshotFlightNumber } from "@/lib/flights/flight-number";
 
 type RevalidateState =
   | { kind: "idle" }
@@ -387,7 +388,7 @@ export function BookingReviewClient() {
                 <ReviewItem label="Duration" value={formatDuration(offer.durationMinutes)} />
                 <ReviewItem label="Stops" value={stopsLabel(offer.stops)} />
                 <ReviewItem label="Airline" value={offer.airlineName} />
-                <ReviewItem label="Flight number" value={offer.flightNumber} />
+                <ReviewItem label="Flight number" value={snapshotFlightNumber(offer) ?? "—"} />
                 <ReviewItem label="Cabin" value={cabinLabel} />
                 <ReviewItem
                   label="Baggage"

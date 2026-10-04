@@ -26,6 +26,7 @@ import { getNotificationEnv } from "@/config/notifications";
 import { getWeatherProviderStatus } from "@/services/weather-service";
 import { eTicketPath, isBookingTicketed } from "@/lib/booking/eticket";
 import { CUSTOMER_FARE_LABEL } from "@/lib/booking/customer-price";
+import { snapshotFlightNumber } from "@/lib/flights/flight-number";
 
 type Params = { params: Promise<{ bookingReference: string }> };
 
@@ -61,7 +62,7 @@ export default async function TripDetailsPage({ params }: Params) {
     getDestinationWeather(offer.destination),
     getBookingFlightStatus({
       bookingReference: trip.reference,
-      flightNumber: offer.flightNumber,
+      flightNumber: snapshotFlightNumber(offer) ?? offer.flightNumber,
       origin: offer.origin,
       destination: offer.destination,
       departureAt: offer.departureAt,
@@ -125,7 +126,7 @@ export default async function TripDetailsPage({ params }: Params) {
             <Item label="Duration" value={formatDuration(offer.durationMinutes)} />
             <Item label="Stops" value={stopsLabel(offer.stops)} />
             <Item label="Airline" value={offer.airlineName} />
-            <Item label="Flight number" value={offer.flightNumber} />
+            <Item label="Flight number" value={snapshotFlightNumber(offer) ?? "—"} />
             <Item label="Cabin" value={cabinLabel} />
             <Item label="Baggage" value={`${offer.baggageKg} KG`} />
           </dl>
@@ -321,7 +322,7 @@ export default async function TripDetailsPage({ params }: Params) {
         </Alert>
         <div className="mt-4 flex flex-wrap gap-4 text-sm">
           <Link
-            href={`/flight-status?flight=${encodeURIComponent(offer.flightNumber)}&date=${encodeURIComponent(offer.departureAt.slice(0, 10))}`}
+            href={`/flight-status?flight=${encodeURIComponent(snapshotFlightNumber(offer) ?? offer.flightNumber)}&date=${encodeURIComponent(offer.departureAt.slice(0, 10))}`}
             className="font-medium text-[var(--color-brand)]"
           >
             Open flight status lookup

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { writeAuditLog } from "@/lib/security/audit";
 import { AdminServiceError } from "@/services/admin-booking-service";
+import { compactFlightNumber, splitFlightNumber } from "@/lib/flights/flight-number";
 import {
   INVENTORY_SUPPLIER_CODE,
   WEEKDAY_LABELS,
@@ -92,9 +93,8 @@ export const inventoryFlightInputSchema = z
     flightNumber: z
       .string()
       .trim()
-      .toUpperCase()
-      .transform((v) => v.replace(/[\s-]+/g, ""))
-      .pipe(z.string().regex(/^([A-Z0-9]{2})?\d{1,4}[A-Z]?$/, "Flight number looks invalid (e.g. PK451)")),
+      .transform((v) => compactFlightNumber(v))
+      .refine((v) => splitFlightNumber(v) !== null, "Flight number looks invalid (e.g. PK451, 9P586 or 586)"),
     originCode: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, "Choose an origin airport"),
     destinationCode: z
       .string()
@@ -166,6 +166,26 @@ async function ensurePrisma() {
   }
 }
 
+/**
+ * Stored inventory flight number: the airline designator + number, e.g. "PK451" or
+ * "9P586". Accepts "586", "9P586", "9P 586" (and repairs a doubled "9P9P586").
+ * Works for designators containing digits (9P, G9, 6E, 3U), not just letters.
+ */
+export function resolveInventoryFlightNumber(value: string, airlineIataCode: string): string {
+  const airlineCode = compactFlightNumber(airlineIataCode);
+  const parts = splitFlightNumber(value, airlineCode);
+  if (!parts) {
+    throw new AdminServiceError("Flight number looks invalid (e.g. PK451, 9P586 or 586).", "VALIDATION");
+  }
+  if (parts.carrier && parts.carrier !== airlineCode) {
+    throw new AdminServiceError(
+      `Flight number ${parts.carrier}${parts.number} does not match the selected airline (${airlineCode}). Enter ${airlineCode}${parts.number} or just ${parts.number}.`,
+      "VALIDATION",
+    );
+  }
+  return `${airlineCode}${parts.number}`;
+}
+
 async function resolveRefs(data: InventoryFlightInput) {
   const [airline, origin, destination] = await Promise.all([
     prisma.airline.findUnique({ where: { id: data.airlineId } }),
@@ -182,9 +202,7 @@ async function resolveRefs(data: InventoryFlightInput) {
       "VALIDATION",
     );
   }
-  const flightNumber = /^\d/.test(data.flightNumber)
-    ? `${airline.iataCode}${data.flightNumber}`
-    : data.flightNumber;
+  const flightNumber = resolveInventoryFlightNumber(data.flightNumber, airline.iataCode);
   return { airline, origin, destination, flightNumber };
 }
 

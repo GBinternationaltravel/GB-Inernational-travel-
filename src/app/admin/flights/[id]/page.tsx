@@ -5,6 +5,7 @@ import { CmsEntityForm } from "@/features/admin/cms-form";
 import { formatFlightDate, formatFlightTime } from "@/lib/flights/filter-sort";
 import { AdminServiceError } from "@/services/admin-booking-service";
 import { getAdminFlight } from "@/services/admin-cms-service";
+import { formatFlightNumber } from "@/lib/flights/flight-number";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -28,7 +29,7 @@ export default async function AdminFlightDetailPage({ params }: Params) {
         <Link href="/admin/flights" className="text-sm text-[var(--color-brand)]">
           ← Back to flights
         </Link>
-        <h1 className="mt-2 font-display text-3xl">{flight.flightNumber}</h1>
+        <h1 className="mt-2 font-display text-3xl">{formatFlightNumber(flight.flightNumber, flight.airline.iataCode)}</h1>
         <p className="text-sm text-[var(--color-muted)]">
           {flight.airline.iataCode} · {flight.airline.name} · {flight.status}
         </p>

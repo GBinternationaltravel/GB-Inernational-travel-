@@ -15,6 +15,7 @@ import { mockRouteList, getHomepageSampleOffers } from "@/data/mock/flights";
 import { siteConfig } from "@/config/site";
 import { calculateOfferPriceSnapshot } from "@/lib/booking/pricing";
 import { formatPrice } from "@/lib/flights/filter-sort";
+import { formatFlightNumber } from "@/lib/flights/flight-number";
 
 export function HomePage() {
   const sampleOffers = getHomepageSampleOffers();
@@ -64,7 +65,7 @@ export function HomePage() {
                     {first.origin.city} → {last.destination.city}
                   </p>
                   <p className="text-sm text-[var(--color-muted)]">
-                    {first.airline.name} · {first.flightNumber}
+                    {first.airline.name} · {formatFlightNumber(first.flightNumber, first.airline.iataCode)}
                   </p>
                 </div>
                 <div className="text-left sm:text-right">

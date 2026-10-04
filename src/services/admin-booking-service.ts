@@ -15,6 +15,7 @@ import { writeAuditLog } from "@/lib/security/audit";
 import { isProductionAdminStoreRequired } from "@/lib/auth/admin";
 import { getSupplierTicketingService } from "@/services/supplier-ticketing-service";
 import { dispatchTravelNotification } from "@/services/notification-service";
+import { snapshotFlightNumber } from "@/lib/flights/flight-number";
 
 export class AdminServiceError extends Error {
   constructor(
@@ -435,7 +436,7 @@ export async function getAdminBookingDetail(
       departureAt: offer?.departureAt ?? "",
       arrivalAt: offer?.arrivalAt ?? "",
       airlineName: offer?.airlineName ?? "",
-      flightNumber: offer?.flightNumber ?? "",
+      flightNumber: snapshotFlightNumber(offer) ?? "",
       cabinClass: offer?.cabinClass ?? booking.cabinClass,
       baggageKg: offer?.baggageKg ?? 0,
       stops: offer?.stops ?? 0,
@@ -559,7 +560,7 @@ export async function transitionAdminBookingStatus(input: {
       bookingReference: booking.reference,
       recipientEmail: booking.contactEmail,
       destinationCity: booking.offerSnapshot?.destinationCity,
-      flightNumber: booking.offerSnapshot?.flightNumber,
+      flightNumber: snapshotFlightNumber(booking.offerSnapshot),
       bookingId: booking.id,
       userId: booking.userId,
       idempotencyKey: `booking-cancelled:${booking.reference}`,

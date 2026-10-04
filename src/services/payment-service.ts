@@ -12,6 +12,7 @@ import {
 import type { VerifiedWebhookEvent } from "@/providers/payments/types";
 import { sendNotification, dispatchTravelNotification } from "@/services/notification-service";
 import type { SafePaymentView } from "@/types/payment";
+import { snapshotFlightNumber } from "@/lib/flights/flight-number";
 
 export class PaymentServiceError extends Error {
   constructor(
@@ -647,7 +648,7 @@ async function sendPaymentNotification(
       bookingReference: booking.reference,
       recipientEmail: booking.contactEmail,
       destinationCity: booking.offerSnapshot.destinationCity,
-      flightNumber: booking.offerSnapshot.flightNumber,
+      flightNumber: snapshotFlightNumber(booking.offerSnapshot),
       bookingId: booking.id,
       userId: booking.userId,
       idempotencyKey: `${eventType}:${booking.reference}:EMAIL`,

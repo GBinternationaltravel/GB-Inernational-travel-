@@ -13,6 +13,7 @@ import {
   formatBaggageLabel,
   stopsLabel,
 } from "@/lib/flights/filter-sort";
+import { formatFlightNumber } from "@/lib/flights/flight-number";
 
 export function FlightResultCard({
   offer,
@@ -44,7 +45,7 @@ export function FlightResultCard({
           <div>
             <p className="font-semibold text-[var(--color-navy)]">{airline.name}</p>
             <p className="text-sm text-[var(--color-muted)]">
-              {first.flightNumber}
+              {formatFlightNumber(first.flightNumber, first.airline.iataCode)}
               {offer.cabinClass ? ` · ${offer.cabinClass.replaceAll("_", " ")}` : null}
             </p>
           </div>

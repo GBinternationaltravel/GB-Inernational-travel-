@@ -7,6 +7,7 @@ import { cabinClasses, passengerTypeLabels } from "@/config/booking";
 import { getAirlineByCode, getAirlineById } from "@/data/airlines";
 import { getAirportByCode } from "@/data/airports";
 import type { OfferSnapshot } from "@/lib/booking/pricing";
+import { formatFlightNumber, splitFlightNumber } from "@/lib/flights/flight-number";
 
 /** All e-ticket times are shown in Pakistan local time. */
 export const ETICKET_TIME_ZONE = "Asia/Karachi";
@@ -129,8 +130,8 @@ export function airlineCodeFor(offer: Pick<OfferSnapshot, "airlineId" | "flightN
   if (offer.airlineId && /^[a-z0-9]{2}$/i.test(offer.airlineId)) {
     return offer.airlineId.toUpperCase();
   }
-  const prefix = /^([A-Z0-9]{2})\d/i.exec(offer.flightNumber ?? "")?.[1];
-  return prefix ? prefix.toUpperCase() : "";
+  // Designators may contain digits (9P, G9, 6E): read the prefix with the shared parser.
+  return splitFlightNumber(offer.flightNumber)?.carrier ?? "";
 }
 
 export type ETicketAirport = { code: string; city: string; name: string | null };
@@ -327,7 +328,7 @@ export function buildETicketView(input: {
     segment: {
       airlineName,
       airlineCode,
-      flightNumber: offer.flightNumber || "—",
+      flightNumber: formatFlightNumber(offer.flightNumber, airlineCode) || "—",
       from: describeAirport(offer.origin, offer.originCity),
       to: describeAirport(offer.destination, offer.destinationCity),
       departure: {

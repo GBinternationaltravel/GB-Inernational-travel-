@@ -11,6 +11,7 @@ import {
   getInventoryFormOptions,
   loadInventoryMeta,
 } from "@/services/flight-inventory-service";
+import { formatFlightNumber } from "@/lib/flights/flight-number";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -97,7 +98,7 @@ export default async function AdminFlightsPage({
 
       <CmsEntityForm
         key={editing?.id ?? "new"}
-        title={editing ? `Edit ${editing.flightNumber}` : "Add flight"}
+        title={editing ? `Edit ${formatFlightNumber(editing.flightNumber, editing.airline.iataCode)}` : "Add flight"}
         endpoint="/api/admin/flights"
         method={editing ? "PATCH" : "POST"}
         submitLabel={editing ? "Update flight" : "Create flight"}
@@ -116,7 +117,9 @@ export default async function AdminFlightsPage({
             label: "Flight number",
             required: true,
             placeholder: "PK451",
-            defaultValue: editing?.flightNumber ?? "",
+            defaultValue: editing
+              ? formatFlightNumber(editing.flightNumber, editing.airline.iataCode)
+              : "",
           },
           {
             name: "originCode",
@@ -327,7 +330,9 @@ export default async function AdminFlightsPage({
                 return (
                   <tr key={item.id} className="border-b border-[var(--color-border)] align-top">
                     <td className="px-3 py-2">
-                      <span className="font-medium">{item.flightNumber}</span>
+                      <span className="font-medium">
+                        {formatFlightNumber(item.flightNumber, item.airline.iataCode)}
+                      </span>
                       <span className="block text-xs text-[var(--color-muted)]">
                         {item.airline.name}
                       </span>

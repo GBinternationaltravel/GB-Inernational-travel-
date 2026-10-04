@@ -11,6 +11,7 @@ import {
   canSendByPreference,
   getUserNotificationPreferences,
 } from "@/lib/notifications/opt-in";
+import { snapshotFlightNumber } from "@/lib/flights/flight-number";
 
 const ELIGIBLE_STATUSES = new Set([
   "PAYMENT_RECEIVED",
@@ -239,7 +240,7 @@ export async function runTravelReminders(input?: {
         bookingReference: booking.reference,
         recipientEmail: booking.contactEmail,
         destinationCity: booking.offerSnapshot.destinationCity,
-        flightNumber: booking.offerSnapshot.flightNumber,
+        flightNumber: snapshotFlightNumber(booking.offerSnapshot),
         bookingId: booking.id,
         userId: booking.userId,
         idempotencyKey,
@@ -320,7 +321,7 @@ export async function runTravelReminders(input?: {
         bookingReference: booking.reference,
         recipientEmail: booking.contactEmail,
         destinationCity: booking.offerSnapshot.destinationCity,
-        flightNumber: booking.offerSnapshot.flightNumber,
+        flightNumber: snapshotFlightNumber(booking.offerSnapshot),
         bookingId: booking.id,
         userId: booking.userId,
         idempotencyKey: weatherKey,

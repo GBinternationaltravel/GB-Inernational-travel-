@@ -5,6 +5,7 @@ import type {
 } from "@/types/flight";
 import { airlines, getAirlineById } from "@/data/airlines";
 import { getAirportByCode } from "@/data/airports";
+import { splitFlightNumber } from "@/lib/flights/flight-number";
 
 type RouteSeed = {
   origin: string;
@@ -186,7 +187,7 @@ function buildConnectingSegments({
       departureAt: midDeparture.toISOString(),
       arrivalAt: finalArrival.toISOString(),
       durationMinutes: secondLeg,
-      flightNumber: `${airline.iataCode}${Number(flightNumber.replace(/\D/g, "")) + 1}`,
+      flightNumber: `${airline.iataCode}${Number.parseInt(splitFlightNumber(flightNumber, airline.iataCode)?.number ?? "0", 10) + 1}`,
       airline: { iataCode: airline.iataCode, name: airline.name },
     },
   ];

@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getAirportByCode } from "@/data/airports";
+import { formatFlightNumber } from "@/lib/flights/flight-number";
 import type {
   AirportSummary,
   CabinClass,
@@ -339,7 +340,8 @@ async function buildOffer(options: {
           departureAt: departureAt.toISOString(),
           arrivalAt: arrivalAt.toISOString(),
           durationMinutes,
-          flightNumber: flight.flightNumber,
+          // Canonical "9P586" / "PK759" even if the row holds "586" or "9P 586".
+          flightNumber: formatFlightNumber(flight.flightNumber, flight.airline.iataCode),
           airline,
           aircraftCode: segment.aircraftCode ?? undefined,
         },

@@ -1,5 +1,6 @@
 import { bookingPricingConfig } from "@/config/booking";
 import type { FlightOffer } from "@/types/flight";
+import { formatFlightNumber } from "@/lib/flights/flight-number";
 
 export type ServiceFeeBand = "UP_TO_30K" | "UP_TO_100K" | "ABOVE_100K";
 
@@ -217,7 +218,7 @@ export function buildOfferSnapshot(offer: FlightOffer): OfferSnapshot {
     providerCode: offer.providerCode,
     airlineId: offer.airlineId,
     airlineName: first.airline.name,
-    flightNumber: first.flightNumber,
+    flightNumber: formatFlightNumber(first.flightNumber, first.airline.iataCode),
     origin: first.origin.iataCode,
     destination: last.destination.iataCode,
     originCity: first.origin.city,

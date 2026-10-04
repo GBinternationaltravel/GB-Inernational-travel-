@@ -7,6 +7,7 @@ import {
 import { BookingStatusBadge } from "@/components/booking/booking-status-badge";
 import { eTicketPath, isBookingTicketed } from "@/lib/booking/eticket";
 import type { SafeBookingView } from "@/types/booking";
+import { snapshotFlightNumber } from "@/lib/flights/flight-number";
 
 export function TripCard({ trip }: { trip: SafeBookingView }) {
   const offer = trip.offer;
@@ -35,7 +36,7 @@ export function TripCard({ trip }: { trip: SafeBookingView }) {
             {formatFlightTime(offer.arrivalAt)}
           </p>
           <p className="mt-1 text-sm text-[var(--color-sky)]">
-            {offer.airlineName} · {offer.flightNumber}
+            {offer.airlineName} · {snapshotFlightNumber(offer)}
           </p>
         </div>
         <BookingStatusBadge status={trip.status} />

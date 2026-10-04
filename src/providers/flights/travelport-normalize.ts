@@ -12,6 +12,7 @@ import type {
 } from "@/types/flight";
 import { getAirportByCode } from "@/data/airports";
 import { getAirlineByCode } from "@/data/airlines";
+import { normalizeFlightNumber } from "@/lib/flights/flight-number";
 
 type AnyRecord = Record<string, unknown>;
 
@@ -267,13 +268,13 @@ function toSegment(flight: AnyRecord, fallbackId: string): FlightSegmentOffer | 
     readCode(flight.Carrier ?? flight.carrier ?? flight.MarketingCarrier) ||
     readCode(asRecord(flight.OperatingCarrier).value) ||
     "XX";
+  const rawFlightNumber = String(
+    flight.number ?? flight.FlightNumber ?? asRecord(flight.Flight).number ?? fallbackId,
+  );
+  // Handles digit designators (9P, G9, 6E) as well as letters: "586", "9P586" → "9P586".
   const flightNumber =
-    String(
-      flight.number ??
-        flight.FlightNumber ??
-        asRecord(flight.Flight).number ??
-        fallbackId,
-    ).replace(/^[A-Z]{2}/, carrierCode) || `${carrierCode}0`;
+    normalizeFlightNumber(rawFlightNumber, carrierCode) ??
+    (rawFlightNumber.trim() ? `${carrierCode}${rawFlightNumber.trim()}` : `${carrierCode}0`);
 
   const originAirport = getAirportByCode(originCode);
   const destinationAirport = getAirportByCode(destinationCode);
@@ -304,9 +305,7 @@ function toSegment(flight: AnyRecord, fallbackId: string): FlightSegmentOffer | 
     departureAt,
     arrivalAt,
     durationMinutes,
-    flightNumber: flightNumber.includes(carrierCode)
-      ? flightNumber
-      : `${carrierCode}${flightNumber}`,
+    flightNumber,
     airline: {
       iataCode: carrierCode,
       name: airline?.name ?? carrierCode,
