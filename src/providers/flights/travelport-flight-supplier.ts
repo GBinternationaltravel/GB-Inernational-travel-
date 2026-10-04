@@ -73,11 +73,21 @@ export class TravelportFlightSupplier implements FlightSupplier {
           { method: "POST", body, fetchImpl: this.fetchImpl },
         );
 
-        const { offers } = normalizeTravelportSearchResponse(payload, {
+        const normalized = normalizeTravelportSearchResponse(payload, {
           tripType: request.tripType,
           cabinClass: request.cabinClass,
           currency: request.currency,
         });
+        // Travelport totals cover every traveller searched; record the mix so the
+        // GB service fee is charged per seat (adults + children).
+        const offers = normalized.offers.map((offer) => ({
+          ...offer,
+          pricedPassengers: {
+            adults: request.adults,
+            children: request.children,
+            infants: request.infants,
+          },
+        }));
 
         if (!offers.length) {
           throw new SupplierError(

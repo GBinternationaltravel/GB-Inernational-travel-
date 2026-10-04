@@ -16,7 +16,7 @@ import {
   type PassengerInput,
 } from "@/lib/validations/booking";
 import { formatPrice } from "@/lib/flights/filter-sort";
-import { calculateMockPriceSnapshot } from "@/lib/booking/pricing";
+import { calculateMockPriceSnapshot, describeServiceFee } from "@/lib/booking/pricing";
 
 type PassengerFormValue = {
   type: "ADULT" | "CHILD" | "INFANT";
@@ -372,14 +372,14 @@ export function PassengerDetailsForm({
       <div className="sticky bottom-0 z-20 -mx-4 border-t border-[var(--color-border)] bg-white/95 px-4 py-4 backdrop-blur sm:static sm:mx-0 sm:rounded-xl sm:border sm:px-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm text-[var(--color-muted)]">Estimated total (incl. markup)</p>
+            <p className="text-sm text-[var(--color-muted)]">Estimated total (incl. GB service fee)</p>
             <p className="font-display text-2xl">
               {formatPrice(estimate.total, estimate.currency)}
             </p>
             <p className="mt-1 text-xs text-[var(--color-muted)]">
               Supplier {formatPrice(estimate.supplierFare, estimate.currency)} + GB service fee{" "}
-              {formatPrice(estimate.fees, estimate.currency)} (
-              {(estimate.markupRate * 100).toFixed(estimate.markupRate === 0.035 ? 1 : 0)}%)
+              {formatPrice(estimate.fees, estimate.currency)}
+              {describeServiceFee(estimate) ? ` (${describeServiceFee(estimate)})` : ""}
             </p>
           </div>
           <Button type="submit" size="lg" className="w-full sm:w-auto" isLoading={submitting}>

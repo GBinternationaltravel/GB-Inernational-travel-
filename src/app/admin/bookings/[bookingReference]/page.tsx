@@ -122,11 +122,9 @@ export default async function AdminBookingDetailPage({ params }: Params) {
             <Item label="Base fare" value={formatPrice(booking.subtotalAmount, booking.currency)} />
             <Item label="Taxes" value={formatPrice(booking.taxesAmount, booking.currency)} />
             <Item
-              label="GB markup"
+              label="GB service fee"
               value={`${formatPrice(booking.feesAmount, booking.currency)}${
-                booking.markupRate != null
-                  ? ` (${(booking.markupRate * 100).toFixed(booking.markupRate === 0.035 ? 1 : 0)}%)`
-                  : ""
+                booking.serviceFeeBasis ? ` (${booking.serviceFeeBasis})` : ""
               }`}
             />
             <Item label="Customer total" value={formatPrice(booking.totalAmount, booking.currency)} />

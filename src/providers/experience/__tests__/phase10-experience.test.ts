@@ -109,7 +109,7 @@ describe("Phase 10 notification center authorization + read state", () => {
 
     const forA = await listNotificationsForUser(userA);
     assert.equal(forA.items.length, 1);
-    assert.equal(forA.items[0].bookingReference, "GB-A");
+    assert.equal(forA.items[0]?.bookingReference, "GB-A");
     assert.equal(forA.unreadCount, 1);
   });
 
@@ -133,7 +133,7 @@ describe("Phase 10 notification center authorization + read state", () => {
 
     const listed = await listNotificationsForUser(userA);
     assert.equal(listed.unreadCount, 0);
-    assert.equal(listed.items[0].unread, false);
+    assert.equal(listed.items[0]?.unread, false);
   });
 
   it("scrubs sensitive-looking values from customer views", () => {

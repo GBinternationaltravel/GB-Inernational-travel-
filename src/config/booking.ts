@@ -24,18 +24,25 @@ export const passengerAgeRules = {
 } as const;
 
 /**
- * GB International Travel agency markup (server-side only).
- * PKR ≤ 50,000 → 5% (covers the 25,000–50,000 band and lower fares)
- * PKR > 50,000 → 3.5%
+ * GB International Travel service fee (server-side only).
+ * Fixed PKR profit per passenger seat (adults and children), chosen from the
+ * per-seat fare (fare + taxes for that seat):
+ *   up to PKR 30,000            → PKR 1,000 per seat
+ *   PKR 30,001 – 100,000        → PKR 1,500 per seat
+ *   above PKR 100,000           → PKR 2,500 per seat (maximum)
+ * Infants (lap, no seat) carry no service fee.
  */
 export const bookingPricingConfig = {
   currency: "PKR",
   /** @deprecated Prefer calculateAgencyMarkup — kept for legacy references. */
   serviceFeeAmount: 1500,
   taxRate: 0.12,
-  markupThresholdPkr: 50_000,
-  markupRateStandard: 0.05,
-  markupRateHigh: 0.035,
+  /** Ordered tiers; the first tier whose `maxPerSeatFarePkr` covers the fare wins. */
+  serviceFeeTiers: [
+    { maxPerSeatFarePkr: 30_000, feePerSeatPkr: 1_000 },
+    { maxPerSeatFarePkr: 100_000, feePerSeatPkr: 1_500 },
+    { maxPerSeatFarePkr: Number.POSITIVE_INFINITY, feePerSeatPkr: 2_500 },
+  ],
 } as const;
 
 /** Draft bookings can eventually expire after this many minutes. */

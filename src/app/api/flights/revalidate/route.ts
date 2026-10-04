@@ -5,6 +5,7 @@ import { revalidateFlightOffer, toCustomerSupplierMessage } from "@/services/fli
 import {
   calculateAgencyMarkup,
   calculateOfferPriceSnapshot,
+  markupOptionsForOffer,
 } from "@/lib/booking/pricing";
 
 const bodySchema = z.object({
@@ -43,14 +44,16 @@ export async function POST(request: Request) {
 
   try {
     const result = await revalidateFlightOffer(parsed.data);
+    // Same passenger mix (seats / infants) for previous and current amounts.
+    const feeOptions = result.offer ? markupOptionsForOffer(result.offer) : undefined;
     const customerPrevious =
       typeof result.previousTotal === "number"
-        ? calculateAgencyMarkup(result.previousTotal).customerTotal
+        ? calculateAgencyMarkup(result.previousTotal, feeOptions).customerTotal
         : undefined;
     const customerCurrent = result.offer
       ? calculateOfferPriceSnapshot(result.offer).total
       : typeof result.currentTotal === "number"
-        ? calculateAgencyMarkup(result.currentTotal).customerTotal
+        ? calculateAgencyMarkup(result.currentTotal, feeOptions).customerTotal
         : undefined;
 
     return NextResponse.json({

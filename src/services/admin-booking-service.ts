@@ -3,6 +3,7 @@ import { ADMIN_PAGE_SIZE } from "@/config/admin";
 import { getBookingRepository } from "@/lib/booking/get-repository";
 import type { StoredBooking } from "@/lib/booking/repository";
 import { maskPassport } from "@/lib/booking/masking";
+import { describeServiceFee } from "@/lib/booking/pricing";
 import {
   allowedBookingTransitions,
   assertBookingTransition,
@@ -61,6 +62,8 @@ export type AdminBookingDetail = {
   feesAmount: number;
   supplierFare: number;
   markupRate: number | null;
+  /** e.g. "PKR 1,500 per seat × 2" (or "5%" for bookings priced before the per-seat fee). */
+  serviceFeeBasis: string | null;
   pricingNotice: string | null;
   contactEmail: string;
   contactPhone: string;
@@ -412,6 +415,7 @@ export async function getAdminBookingDetail(
       offer?.pricing?.supplierFare ??
       booking.subtotalAmount + booking.taxesAmount,
     markupRate: offer?.pricing?.markupRate ?? null,
+    serviceFeeBasis: describeServiceFee(offer?.pricing),
     pricingNotice: offer?.pricing?.notice ?? null,
     contactEmail: booking.contactEmail,
     contactPhone: `${booking.contactPhoneCountry} ${booking.contactPhone}`.trim(),

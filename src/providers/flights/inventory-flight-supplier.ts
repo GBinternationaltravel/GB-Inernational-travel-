@@ -310,6 +310,7 @@ async function buildOffer(options: {
   if (seatsRemaining < Math.max(1, seatsNeeded)) return { ok: false, reason: "NO_SEATS" };
 
   const baseFare = Math.round(meta.fare * seatsNeeded + meta.infantFare * pax.infants);
+  const infantFareTotal = Math.round(meta.infantFare * pax.infants);
   const taxes = Math.round(meta.taxes * seatsNeeded);
   const totalPrice = baseFare + taxes;
   const airline = { iataCode: flight.airline.iataCode, name: flight.airline.name };
@@ -357,6 +358,9 @@ async function buildOffer(options: {
       baseFare,
       taxes,
       fees: 0,
+      // Lets the GB service fee be charged per seat (adults + children, not infants).
+      pricedPassengers: { adults: pax.adults, children: pax.children, infants: pax.infants },
+      infantFareTotal,
       changeable: null,
       fareRules:
         meta.fareNotes ??

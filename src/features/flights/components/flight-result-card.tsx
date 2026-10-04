@@ -4,7 +4,7 @@ import { Plane } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { FlightOffer } from "@/types/flight";
-import { calculateOfferPriceSnapshot } from "@/lib/booking/pricing";
+import { calculateOfferPriceSnapshot, describeServiceFee } from "@/lib/booking/pricing";
 import {
   formatDuration,
   formatFlightTime,
@@ -28,7 +28,7 @@ export function FlightResultCard({
 
   const airline = first.airline;
   const pricing = calculateOfferPriceSnapshot(offer);
-  const ratePct = (pricing.markupRate * 100).toFixed(pricing.markupRate === 0.035 ? 1 : 0);
+  const feeBasis = describeServiceFee(pricing);
 
   return (
     <article className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-elevated)] sm:p-5">
@@ -113,7 +113,7 @@ export function FlightResultCard({
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-[var(--color-muted)]">
-                GB service fee ({ratePct}%)
+                GB service fee{feeBasis ? ` (${feeBasis})` : ""}
               </dt>
               <dd className="font-medium tabular-nums">
                 {formatPrice(pricing.fees, pricing.currency)}

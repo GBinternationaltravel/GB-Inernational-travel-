@@ -68,6 +68,20 @@ export interface FlightOffer {
   fees?: number | null;
   changeable?: boolean | null;
   fareRules?: string | null;
+  /**
+   * Passenger mix that `totalPrice` was priced for. Used to apply the GB per-seat
+   * service fee (adults + children = seats; infants have no seat). When absent the
+   * whole fare is treated as a single seat.
+   */
+  pricedPassengers?: PricedPassengers | null;
+  /** Portion of `totalPrice` that belongs to infants (lap, no seat). No GB fee on it. */
+  infantFareTotal?: number | null;
+}
+
+export interface PricedPassengers {
+  adults: number;
+  children: number;
+  infants: number;
 }
 
 export interface FlightSearchParams {

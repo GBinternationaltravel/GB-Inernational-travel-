@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdminPage } from "@/lib/auth/admin";
 import { AdminPagination } from "@/features/admin/admin-tables";
 import { CmsEntityForm, CmsToggleButton } from "@/features/admin/cms-form";
+import { serviceFeePerSeat } from "@/lib/booking/pricing";
 import { formatFlightDate, formatPrice } from "@/lib/flights/filter-sort";
 import { AdminServiceError } from "@/services/admin-booking-service";
 import { getAdminFlight, listAdminFlights } from "@/services/admin-cms-service";
@@ -246,7 +247,9 @@ export default async function AdminFlightsPage({
       >
         <p className="text-sm text-[var(--color-muted)]">
           Times are local at each airport (arrival the next day is detected automatically).
-          Customers pay fare + taxes per seat plus the GB service fee, added at checkout.
+          Customers pay fare + taxes per seat plus the GB service fee, added at checkout: PKR
+          1,000 per seat when fare + taxes is up to PKR 30,000, PKR 1,500 up to PKR 100,000, and
+          PKR 2,500 above PKR 100,000 (adults and children; no fee on infants).
           {editing ? (
             <>
               {" "}
@@ -341,6 +344,15 @@ export default async function AdminFlightsPage({
                     <td className="px-3 py-2">{cabinLabel(item.cabinClass)}</td>
                     <td className="px-3 py-2 tabular-nums">
                       {meta ? formatPrice(meta.fare + meta.taxes, "PKR") : "—"}
+                      {meta ? (
+                        <span className="block text-xs text-[var(--color-muted)]">
+                          Customer pays{" "}
+                          {formatPrice(
+                            meta.fare + meta.taxes + serviceFeePerSeat(meta.fare + meta.taxes).feePerSeat,
+                            "PKR",
+                          )}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-3 py-2 tabular-nums">{meta ? meta.seats : "—"}</td>
                     <td className="px-3 py-2">
