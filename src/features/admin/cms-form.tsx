@@ -65,10 +65,12 @@ export function CmsEntityForm({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // Keep a reference: React clears event.currentTarget after the first await.
+    const formElement = event.currentTarget;
     setBusy(true);
     setError(null);
     setOk(null);
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formElement);
     const payload: Record<string, unknown> = { ...(extraPayload ?? {}) };
 
     for (const field of fields) {
@@ -103,7 +105,7 @@ export function CmsEntityForm({
       onSuccess?.();
       router.refresh();
       if (method === "POST") {
-        event.currentTarget.reset();
+        formElement.reset();
       }
     } catch {
       setError("Could not save.");

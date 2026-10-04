@@ -9,6 +9,7 @@ import type { FlightSupplier } from "@/providers/flights/supplier-types";
 import type { FlightStatusProvider } from "@/providers/flight-status/types";
 import { MockFlightProvider, MockFlightSupplier } from "@/providers/flights/mock-flight-supplier";
 import { TravelportFlightSupplier } from "@/providers/flights/travelport-flight-supplier";
+import { InventoryFlightSupplier } from "@/providers/flights/inventory-flight-supplier";
 import { MockWeatherProvider } from "@/providers/weather/mock-weather-provider";
 import { OpenWeatherMapProvider } from "@/providers/weather/openweather-provider";
 import { ConsoleNotificationProvider } from "@/providers/notifications/console-notification-provider";
@@ -47,8 +48,11 @@ export function getFlightSupplier(): FlightSupplier {
       } else {
         flightSupplier = new TravelportFlightSupplier();
       }
-    } else {
+    } else if (env.activeSupplier === "mock") {
       flightSupplier = new MockFlightSupplier();
+    } else {
+      // Default (FLIGHT_SUPPLIER unset or "inventory"): admin-managed flights from the database.
+      flightSupplier = new InventoryFlightSupplier();
     }
   }
   return flightSupplier;

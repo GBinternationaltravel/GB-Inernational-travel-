@@ -51,7 +51,11 @@ export function FlightResultCard({
         <Badge variant={offer.isMock ? "warning" : "info"}>
           {offer.isMock
             ? "Mock inventory"
-            : "Live pre-production — not a confirmed ticket"}
+            : offer.supplierCode === "INVENTORY"
+              ? typeof offer.seatsRemaining === "number" && offer.seatsRemaining <= 5
+                ? `${offer.seatsRemaining} ${offer.seatsRemaining === 1 ? "seat" : "seats"} left`
+                : "Seats available"
+              : "Live pre-production — not a confirmed ticket"}
         </Badge>
       </div>
 
