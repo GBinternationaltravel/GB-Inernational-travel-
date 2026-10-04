@@ -17,6 +17,7 @@
     "postinstall": "prisma generate",
     "build": "prisma generate && next build",
     "test:supplier": "tsx --test src/providers/flights/__tests__/mock-flight-supplier.test.ts src/providers/flights/__tests__/travelport-flight-supplier.test.ts src/providers/flights/__tests__/travelport-booking.test.ts",
+    "test:pricing": "tsx --test src/lib/booking/__tests__/pricing.test.ts",
     "test:experience": "tsx --test src/providers/experience/__tests__/phase8-experience.test.ts src/providers/experience/__tests__/phase9a-experience.test.ts src/providers/experience/__tests__/phase9b-experience.test.ts src/providers/experience/__tests__/phase10-experience.test.ts src/providers/experience/__tests__/phase11-cutover.test.ts",
     "reminders:run": "tsx scripts/run-reminders.ts",
     "verify:weather": "tsx --env-file=.env scripts/verify-weather-9b.ts",

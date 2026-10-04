@@ -52,14 +52,14 @@ function offerAt(total: number): FlightOffer {
   } as FlightOffer;
 }
 
-const cases: Array<{ fare: number; rate: number }> = [
-  { fare: 25_000, rate: 0.05 },
-  { fare: 30_000, rate: 0.05 },
-  { fare: 40_000, rate: 0.05 },
-  { fare: 50_000, rate: 0.05 },
-  { fare: 50_001, rate: 0.035 },
-  { fare: 60_000, rate: 0.035 },
-  { fare: 100_000, rate: 0.035 },
+const cases: Array<{ fare: number; fee: number }> = [
+  { fare: 25_000, fee: 1_000 },
+  { fare: 30_000, fee: 1_000 },
+  { fare: 30_001, fee: 1_500 },
+  { fare: 45_000, fee: 1_500 },
+  { fare: 100_000, fee: 1_500 },
+  { fare: 100_001, fee: 2_500 },
+  { fare: 150_000, fee: 2_500 },
 ];
 
 let failed = 0;
@@ -67,13 +67,13 @@ let failed = 0;
 for (const c of cases) {
   const m = calculateAgencyMarkup(c.fare);
   try {
-    assert.equal(m.rate, c.rate);
-    assert.equal(m.markup, Math.round(c.fare * c.rate));
+    assert.equal(m.feePerSeat, c.fee);
+    assert.equal(m.markup, c.fee);
     assert.equal(m.customerTotal, c.fare + m.markup);
     // Apply twice must not compound if we always pass supplier fare
     const again = calculateAgencyMarkup(m.supplierFare);
     assert.equal(again.markup, m.markup);
-    pass("MARKUP", `${c.fare} → rate=${m.rate} markup=${m.markup} total=${m.customerTotal}`);
+    pass("MARKUP", `${c.fare} → fee/seat=${m.feePerSeat} markup=${m.markup} total=${m.customerTotal}`);
   } catch (e) {
     failed += 1;
     console.error(`FAIL  [MARKUP] ${c.fare}: ${e instanceof Error ? e.message : e}`);
@@ -83,27 +83,27 @@ for (const c of cases) {
 // Snapshot applies once from offer total (supplier fare)
 const snap = calculateOfferPriceSnapshot(offerAt(50_000));
 assert.equal(snap.supplierFare, 50_000);
-assert.equal(snap.fees, 2_500);
-assert.equal(snap.total, 52_500);
+assert.equal(snap.fees, 1_500);
+assert.equal(snap.total, 51_500);
 const snap2 = calculateOfferPriceSnapshot(offerAt(50_000));
 assert.equal(snap2.total, snap.total);
 pass("MARKUP_ONCE", "refresh/rebuild snapshot does not double markup");
 
-const high = calculateOfferPriceSnapshot(offerAt(100_000));
-assert.equal(high.markupRate, 0.035);
-assert.equal(high.fees, 3_500);
-assert.equal(high.total, 103_500);
-pass("MARKUP_HIGH", "100000 → 3.5%");
+const high = calculateOfferPriceSnapshot(offerAt(150_000));
+assert.equal(high.feePerSeat, 2_500);
+assert.equal(high.fees, 2_500);
+assert.equal(high.total, 152_500);
+pass("MARKUP_HIGH", "150000 → PKR 2,500 per seat");
 
 // Changing flights: new supplier fare → fresh markup (never reuse previous fees)
-const flightA = calculateOfferPriceSnapshot(offerAt(40_000));
-const flightB = calculateOfferPriceSnapshot(offerAt(80_000));
-assert.equal(flightA.fees, 2_000);
-assert.equal(flightA.total, 42_000);
-assert.equal(flightB.fees, 2_800);
-assert.equal(flightB.total, 82_800);
+const flightA = calculateOfferPriceSnapshot(offerAt(29_500));
+const flightB = calculateOfferPriceSnapshot(offerAt(120_000));
+assert.equal(flightA.fees, 1_000);
+assert.equal(flightA.total, 30_500);
+assert.equal(flightB.fees, 2_500);
+assert.equal(flightB.total, 122_500);
 assert.notEqual(flightA.fees, flightB.fees);
-pass("MARKUP_FLIGHT_CHANGE", "40k@5% → 80k@3.5% recalculated from supplier fare");
+pass("MARKUP_FLIGHT_CHANGE", "29.5k@1,000 → 120k@2,500 recalculated from supplier fare");
 
 // Anti-compound: if customer total were wrongly fed back as supplier fare, totals would inflate
 const compounded = calculateAgencyMarkup(flightA.total);
