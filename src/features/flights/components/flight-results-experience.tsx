@@ -54,7 +54,7 @@ export function FlightResultsExperience({
   const router = useRouter();
   const [offers] = useState(initialOffers);
   const [filters, setFilters] = useState<FlightFiltersState>(defaultFlightFilters());
-  const [sort, setSort] = useState<FlightSortOption>("recommended");
+  const [sort, setSort] = useState<FlightSortOption>("cheapest")
   const [modifyOpen, setModifyOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
