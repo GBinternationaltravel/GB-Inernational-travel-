@@ -19,6 +19,7 @@ import {
 } from "@/lib/flights/filter-sort";
 import { getFlightSupplierEnv } from "@/config/flight-supplier";
 import { getTicketIssuerMode } from "@/services/ticket-issuer-service";
+import { eTicketPath, isBookingTicketed } from "@/lib/booking/eticket";
 
 type Params = { params: Promise<{ bookingReference: string }> };
 
@@ -60,7 +61,22 @@ export default async function AdminBookingDetailPage({ params }: Params) {
           </Link>
           <h1 className="mt-2 font-display text-3xl">{booking.reference}</h1>
         </div>
-        <BookingStatusBadge status={booking.status} />
+        <div className="flex flex-wrap items-center gap-3">
+          {isBookingTicketed({
+            status: booking.status,
+            pnr: booking.supplier.supplierBookingRef,
+          }) ? (
+            <Link
+              href={eTicketPath(booking.reference)}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex h-9 items-center rounded-[var(--radius-md)] bg-[var(--color-emerald)] px-3.5 text-sm font-semibold text-white hover:bg-[var(--color-emerald-dark)]"
+            >
+              View / print e-ticket
+            </Link>
+          ) : null}
+          <BookingStatusBadge status={booking.status} />
+        </div>
       </div>
 
       <AdminStoreBanner developmentDataStore={booking.developmentDataStore} />

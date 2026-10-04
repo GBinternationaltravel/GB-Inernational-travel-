@@ -24,6 +24,7 @@ import { getCityByIata, destinationPath } from "@/data/destinations/catalog";
 import { listNotificationsForBooking } from "@/lib/notifications/notification-store";
 import { getNotificationEnv } from "@/config/notifications";
 import { getWeatherProviderStatus } from "@/services/weather-service";
+import { eTicketPath, isBookingTicketed } from "@/lib/booking/eticket";
 
 type Params = { params: Promise<{ bookingReference: string }> };
 
@@ -79,6 +80,10 @@ export default async function TripDetailsPage({ params }: Params) {
   );
   const emailEnv = getNotificationEnv();
   const weatherStatus = getWeatherProviderStatus();
+  const ticketed = isBookingTicketed({
+    status: trip.status,
+    pnr: trip.supplier.supplierBookingRef,
+  });
 
   return (
     <Container className="py-8 sm:py-10">
@@ -93,6 +98,20 @@ export default async function TripDetailsPage({ params }: Params) {
         </div>
         <BookingStatusBadge status={trip.status} />
       </div>
+
+      {ticketed ? (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] border-l-4 border-l-[var(--color-emerald)] bg-white p-4">
+          <p className="text-sm">
+            Your ticket has been issued. View or print your e-ticket to take to the airport.
+          </p>
+          <Link
+            href={eTicketPath(trip.reference)}
+            className="inline-flex h-10 items-center rounded-md bg-[var(--color-brand)] px-4 text-sm font-medium text-white"
+          >
+            View / print e-ticket
+          </Link>
+        </div>
+      ) : null}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-[var(--color-border)] bg-white p-4 sm:p-5">
@@ -357,6 +376,14 @@ export default async function TripDetailsPage({ params }: Params) {
             className="inline-flex h-11 items-center rounded-md border border-[var(--color-border)] px-4 text-sm font-medium"
           >
             View payment confirmation
+          </Link>
+        ) : null}
+        {ticketed ? (
+          <Link
+            href={eTicketPath(trip.reference)}
+            className="inline-flex h-11 items-center rounded-md bg-[var(--color-brand)] px-4 text-sm font-medium text-white"
+          >
+            View / print e-ticket
           </Link>
         ) : null}
         <Link

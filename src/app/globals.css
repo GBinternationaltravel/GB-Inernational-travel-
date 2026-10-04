@@ -113,3 +113,28 @@ textarea:focus-visible,
   --color-surface: #ffffff;
   background: #f4f6fa;
 }
+
+/* Printable e-ticket (/my-trips/[ref]/ticket): print only the ticket itself. */
+@media print {
+  body:has(.gb-eticket) {
+    background: #ffffff;
+    min-height: 0;
+  }
+
+  body:has(.gb-eticket) header,
+  body:has(.gb-eticket) footer,
+  body:has(.gb-eticket) nav {
+    display: none !important;
+  }
+
+  body:has(.gb-eticket) main > * {
+    max-width: none;
+    padding: 0;
+  }
+
+  .gb-eticket {
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
