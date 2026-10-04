@@ -1,280 +1,214 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { ArrowRight, Bell, CloudSun, MapPinned, ShieldCheck } from "lucide-react";
-import { HomeHeroSearch } from "@/features/home/home-hero-search";
+import { Bell, BookOpen, CloudSun, MapPinned, Plus, type LucideIcon } from "lucide-react";
+import { HomeHero, HomeTrustStrip } from "@/features/home/home-hero";
+import { HomeSignatureDestinations } from "@/features/home/home-signature-destinations";
+import { HomePopularRoutes } from "@/features/home/home-popular-routes";
 import { QuickAssistanceLoader } from "@/components/chatbot/quick-assistance-loader";
-import { Section, SectionHeader } from "@/components/ui/section";
-import { Badge } from "@/components/ui/badge";
-import { Alert } from "@/components/ui/alert";
-import {
-  foundationFaqs,
-  popularDomesticDestinations,
-  popularInternationalDestinations,
-} from "@/data/mock/content";
-import { mockRouteList, getHomepageSampleOffers } from "@/data/mock/flights";
+import { Container } from "@/components/ui/container";
+import { homeDisplayFont } from "@/features/home/home-fonts";
 import { siteConfig } from "@/config/site";
-import { calculateOfferPriceSnapshot } from "@/lib/booking/pricing";
-import { formatPrice } from "@/lib/flights/filter-sort";
-import { formatFlightNumber } from "@/lib/flights/flight-number";
+import { whatsappHref } from "@/lib/contact-links";
+import { cn } from "@/lib/utils";
+import { foundationFaqs } from "@/data/mock/content";
 
 export function HomePage() {
-  const sampleOffers = getHomepageSampleOffers();
-
   return (
     <>
-      <section className="relative overflow-hidden bg-[var(--color-navy)] text-white">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-40"
-          aria-hidden
-          style={{
-            backgroundImage:
-              "radial-gradient(ellipse 70% 60% at 15% 20%, rgb(21 151 229 / 0.35), transparent 55%), radial-gradient(ellipse 50% 45% at 90% 10%, rgb(8 127 91 / 0.28), transparent 50%)",
-          }}
-        />
+      <HomeHero />
+      <HomeTrustStrip />
 
-        <div className="relative mx-auto max-w-6xl px-4 pt-14 pb-16 sm:px-6 sm:pt-16 lg:px-8 lg:pb-20">
-          <h1 className="font-display max-w-4xl text-3xl font-bold tracking-tight text-white sm:text-4xl sm:leading-[1.15] lg:text-5xl lg:leading-[1.12]">
-            {siteConfig.name}
-          </h1>
-          <p className="mt-3 max-w-2xl text-base leading-relaxed text-white/75 sm:mt-4 sm:text-lg sm:leading-relaxed lg:text-xl lg:text-white/80">
-            Your trusted partner for domestic & international flights, tours, visas and travel
-            services.
-          </p>
-          <HomeHeroSearch />
-        </div>
+      <HomeSignatureDestinations />
+      <HomePopularRoutes />
+
+      <section aria-labelledby="companion-title" className="bg-[#faf8f4]">
+        <Container className="grid gap-12 py-20 sm:py-24 lg:grid-cols-12 lg:gap-16">
+          <div className="lg:col-span-4">
+            <HomeHeading
+              id="companion-title"
+              eyebrow="Before you fly"
+              title="Travel with confidence"
+              text="Weather, travel alerts and guides for the places we know best, from Gilgit-Baltistan to the Gulf."
+            />
+          </div>
+          <ul className="grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:col-span-8">
+            <CompanionItem
+              icon={CloudSun}
+              title="Destination weather"
+              text="Plan with weather insight for Gilgit-Baltistan and international cities."
+            />
+            <CompanionItem
+              icon={Bell}
+              title="Travel updates"
+              text="Road, flight and weather updates for safer travel planning."
+              href="/travel-updates"
+            />
+            <CompanionItem
+              icon={BookOpen}
+              title="Travel guides"
+              text="Editorial guides for destinations across Pakistan and beyond."
+              href="/travel-guides"
+            />
+            <CompanionItem
+              icon={MapPinned}
+              title="Local expertise"
+              text="A Pakistan-based team with international reach, and real people on WhatsApp."
+            />
+          </ul>
+        </Container>
       </section>
 
-      <Section>
-        <SectionHeader
-          title="Popular flights from Pakistan"
-          description="Sample routes for development. Prices include all taxes and fees — not live airline fares."
-        />
-        <div className="grid gap-0 divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
-          {sampleOffers.map((offer) => {
-            const first = offer.segments[0];
-            const last = offer.segments[offer.segments.length - 1];
-            if (!first || !last) return null;
-            const pricing = calculateOfferPriceSnapshot(offer);
-            return (
-              <div
-                key={offer.id}
-                className="flex flex-col justify-between gap-3 py-4 sm:flex-row sm:items-center"
-              >
-                <div>
-                  <p className="font-semibold text-[var(--color-navy)]">
-                    {first.origin.city} → {last.destination.city}
-                  </p>
-                  <p className="text-sm text-[var(--color-muted)]">
-                    {first.airline.name} · {formatFlightNumber(first.flightNumber, first.airline.iataCode)}
-                  </p>
-                </div>
-                <div className="text-left sm:text-right">
-                  <Badge variant="warning">Mock price</Badge>
-                  <p className="mt-1 text-xl font-bold text-[var(--color-navy)]">
-                    {formatPrice(pricing.total, pricing.currency)}
-                  </p>
-                  <p className="text-xs text-[var(--color-muted-soft)]">
-                    Incl. taxes &amp; fees
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <p className="mt-4 text-sm text-[var(--color-muted)]">
-          Try routes such as {mockRouteList.slice(0, 4).join(", ")}.
-        </p>
-      </Section>
-
-      <Section className="bg-white">
-        <SectionHeader
-          title="Featured offers"
-          description="Verified deals appear here once supplier inventory is connected."
-        />
-        <Alert variant="info">
-          No live deals are published yet. Browse the deals page for the latest available offers.
-        </Alert>
-        <div className="mt-6">
-          <Link
-            href="/deals"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-sky)]"
-          >
-            View deals <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </Section>
-
-      <Section>
-        <SectionHeader
-          title="Popular Pakistan destinations"
-          description="Domestic routes customers commonly search from major Pakistani cities."
-        />
-        <div className="grid gap-6 sm:grid-cols-3">
-          {popularDomesticDestinations.map((destination) => (
+      <section aria-labelledby="faq-title" className="bg-white">
+        <Container className="grid gap-12 py-20 sm:py-24 lg:grid-cols-12 lg:gap-16">
+          <div className="lg:col-span-4">
+            <HomeHeading
+              id="faq-title"
+              eyebrow="Questions"
+              title="Frequently asked"
+              text="Quick answers about booking with GB International Travel."
+            />
             <Link
-              key={destination.slug}
-              href="/destinations"
-              className="group block border-b border-[var(--color-border)] pb-4 transition-colors"
+              href="/faq"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-[var(--color-navy)] underline decoration-[#c9a96e] decoration-1 underline-offset-[6px] hover:text-[#8b6e3e]"
             >
-              <p className="text-2xl font-semibold text-[var(--color-navy)] transition-colors group-hover:text-[var(--color-emerald)]">
-                {destination.name}
-              </p>
-              <p className="mt-2 text-sm text-[var(--color-muted)]">{destination.summary}</p>
-            </Link>
-          ))}
-        </div>
-      </Section>
-
-      <Section className="bg-white">
-        <SectionHeader
-          title="Popular international destinations"
-          description="International gateways frequently searched from Pakistan."
-        />
-        <div className="grid gap-6 sm:grid-cols-3">
-          {popularInternationalDestinations.map((destination) => (
-            <Link
-              key={destination.slug}
-              href="/destinations"
-              className="group block border-b border-[var(--color-border)] pb-4"
-            >
-              <p className="text-2xl font-semibold text-[var(--color-navy)] transition-colors group-hover:text-[var(--color-emerald)]">
-                {destination.name}
-              </p>
-              <p className="mt-2 text-sm text-[var(--color-muted)]">{destination.summary}</p>
-            </Link>
-          ))}
-        </div>
-      </Section>
-
-      <Section>
-        <SectionHeader
-          title="Travel with confidence"
-          description="Flight booking, destination weather, travel alerts and guides — in one trusted platform."
-        />
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-          <CompanionItem
-            icon={<ShieldCheck className="h-5 w-5" aria-hidden />}
-            title="Secure booking"
-            text="Clear, all-inclusive pricing: the fare you see includes taxes and fees."
-          />
-          <CompanionItem
-            icon={<CloudSun className="h-5 w-5" aria-hidden />}
-            title="Destination weather"
-            text="Plan with weather insight for Gilgit-Baltistan and international cities."
-          />
-          <CompanionItem
-            icon={<Bell className="h-5 w-5" aria-hidden />}
-            title="Travel alerts"
-            text="Road, flight and weather updates for safer travel planning."
-          />
-          <CompanionItem
-            icon={<MapPinned className="h-5 w-5" aria-hidden />}
-            title="Local expertise"
-            text="Pakistan-first service with international reach and destination guides."
-          />
-        </div>
-      </Section>
-
-      <Section className="bg-white">
-        <SectionHeader
-          title="Why GB International Travel"
-          description="A Pakistan-first platform built for trust, clarity and premium service."
-        />
-        <ul className="grid gap-3 text-sm text-[var(--color-muted)] sm:grid-cols-2">
-          <li className="flex gap-2">
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-emerald)]" />
-            PKR-first booking with clear, all-inclusive fares
-          </li>
-          <li className="flex gap-2">
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-emerald)]" />
-            Domestic and international route coverage
-          </li>
-          <li className="flex gap-2">
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-emerald)]" />
-            Professional ticketing and trip support
-          </li>
-          <li className="flex gap-2">
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-emerald)]" />
-            Gilgit-Baltistan tours and travel updates
-          </li>
-        </ul>
-      </Section>
-
-      <Section>
-        <SectionHeader
-          title="Travel guides"
-          description="Editorial guides for destinations across Pakistan and beyond."
-        />
-        <Link
-          href="/travel-guides"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-sky)]"
-        >
-          Browse travel guides <ArrowRight className="h-4 w-4" aria-hidden />
-        </Link>
-      </Section>
-
-      <Section className="bg-white">
-        <SectionHeader
-          title="FAQs"
-          description="Quick answers about booking with GB International Travel."
-        />
-        <div className="space-y-4">
-          {foundationFaqs.map((faq) => (
-            <details key={faq.id} className="border-b border-[var(--color-border)] pb-4">
-              <summary className="cursor-pointer font-semibold text-[var(--color-navy)]">
-                {faq.question}
-              </summary>
-              <p className="mt-2 text-sm text-[var(--color-muted)]">{faq.answer}</p>
-            </details>
-          ))}
-        </div>
-        <div className="mt-6">
-          <Link href="/faq" className="text-sm font-semibold text-[var(--color-sky)]">
-            View all FAQs
-          </Link>
-        </div>
-      </Section>
-
-      <Section>
-        <div className="rounded-[var(--radius-lg)] bg-[var(--color-navy)] px-6 py-12 text-white sm:px-10">
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Ready to plan your next trip?
-          </h2>
-          <p className="mt-3 max-w-2xl text-white/75">
-            Search flights, explore tours, and manage your bookings in one place.
-          </p>
-          <div className="mt-6">
-            <Link
-              href="/flights"
-              className="inline-flex h-12 items-center rounded-[var(--radius-md)] bg-[var(--color-emerald)] px-6 text-base font-semibold text-white hover:bg-[var(--color-emerald-dark)]"
-            >
-              Book a Flight
+              View all FAQs
             </Link>
           </div>
-        </div>
-      </Section>
+          <div className="divide-y divide-[#ebe5da] border-y border-[#ebe5da] lg:col-span-8">
+            {foundationFaqs.map((faq) => (
+              <details key={faq.id} className="group py-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-[1.0625rem] font-medium text-[var(--color-navy)] [&::-webkit-details-marker]:hidden">
+                  {faq.question}
+                  <Plus
+                    className="h-4 w-4 shrink-0 text-[#8b6e3e] transition-transform duration-300 group-open:rotate-45"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                </summary>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)]">
+                  {faq.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      <section aria-labelledby="home-cta-title" className="bg-white pb-20 sm:pb-24">
+        <Container>
+          <div className="relative overflow-hidden rounded-[28px] bg-[#0a1a31] px-6 py-14 text-white sm:px-14 sm:py-16">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_100%_0%,rgb(201_169_110/0.18),transparent_60%)]"
+            />
+            <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="flex items-center gap-3 text-[0.625rem] font-semibold tracking-[0.3em] text-[#d9c08f] uppercase">
+                  <span className="h-px w-8 bg-[#c9a96e]" aria-hidden />
+                  Ready when you are
+                </p>
+                <h2
+                  id="home-cta-title"
+                  className={cn(
+                    homeDisplayFont.className,
+                    "mt-4 max-w-xl text-[2.25rem] leading-[1.08] font-medium text-white sm:text-[2.75rem]",
+                  )}
+                >
+                  Plan your next journey with us
+                </h2>
+                <p className="mt-4 max-w-xl text-[0.9375rem] leading-relaxed text-white/75">
+                  Search flights, explore Northern tours, or tell our team what you have in mind.
+                </p>
+              </div>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-7">
+                <Link
+                  href="/flights"
+                  className="inline-flex h-12 items-center justify-center rounded-full bg-[#c9a96e] px-7 text-sm font-semibold tracking-[0.02em] text-[#0b1f3a] transition-colors hover:bg-[#d8bd8a] focus-visible:outline-white"
+                >
+                  Book a flight
+                </Link>
+                <a
+                  href={whatsappHref(siteConfig.contactWhatsApp, "Hi GB International Travel, I'd like help planning a trip.")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-center text-sm text-white/85 underline decoration-[#c9a96e]/70 decoration-1 underline-offset-[6px] hover:text-white"
+                >
+                  WhatsApp {siteConfig.contactWhatsApp}
+                </a>
+              </div>
+            </div>
+          </div>
+        </Container>
+      </section>
 
       <QuickAssistanceLoader />
     </>
   );
 }
 
-function CompanionItem({
-  icon,
+function HomeHeading({
+  id,
+  eyebrow,
   title,
   text,
 }: {
-  icon: ReactNode;
+  id: string;
+  eyebrow: string;
   title: string;
-  text: string;
+  text?: string;
 }) {
   return (
     <div>
-      <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[color-mix(in_srgb,var(--color-emerald)_12%,white)] text-[var(--color-emerald)]">
-        {icon}
-      </div>
-      <h3 className="text-lg font-semibold text-[var(--color-navy)]">{title}</h3>
-      <p className="mt-2 text-sm text-[var(--color-muted)]">{text}</p>
+      <p className="flex items-center gap-3 text-[0.625rem] font-semibold tracking-[0.3em] text-[#8b6e3e] uppercase">
+        <span className="h-px w-8 bg-[#c9a96e]" aria-hidden />
+        {eyebrow}
+      </p>
+      <h2
+        id={id}
+        className={cn(
+          homeDisplayFont.className,
+          "mt-4 text-[2.25rem] leading-[1.08] font-medium tracking-[-0.01em] text-[var(--color-navy)] sm:text-[2.75rem]",
+        )}
+      >
+        {title}
+      </h2>
+      {text ? (
+        <p className="mt-4 max-w-md text-[0.9375rem] leading-relaxed text-[var(--color-muted)]">
+          {text}
+        </p>
+      ) : null}
     </div>
+  );
+}
+
+function CompanionItem({
+  icon: Icon,
+  title,
+  text,
+  href,
+}: {
+  icon: LucideIcon;
+  title: string;
+  text: string;
+  href?: string;
+}) {
+  const body = (
+    <>
+      <Icon className="h-7 w-7 text-[#b08d57]" strokeWidth={1.15} aria-hidden />
+      <h3 className="mt-5 text-[0.6875rem] font-semibold tracking-[0.2em] text-[var(--color-navy)] uppercase transition-colors group-hover:text-[#8b6e3e]">
+        {title}
+      </h3>
+      <p className="mt-2.5 max-w-xs text-sm leading-relaxed text-[var(--color-muted)]">{text}</p>
+    </>
+  );
+  return (
+    <li>
+      {href ? (
+        <Link href={href} className="group block rounded-[var(--radius-md)]">
+          {body}
+        </Link>
+      ) : (
+        body
+      )}
+    </li>
   );
 }

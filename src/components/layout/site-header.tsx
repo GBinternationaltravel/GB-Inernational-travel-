@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Menu, Plane, X } from "lucide-react";
 import { navigation, siteConfig } from "@/config/site";
@@ -12,9 +13,30 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated" && Boolean(session?.user);
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+  const [atTop, setAtTop] = useState(true);
+
+  // Homepage only: the header sits transparently over the hero photo until the page scrolls.
+  useEffect(() => {
+    if (!isHome) return;
+    const onScroll = () => setAtTop(window.scrollY < 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [isHome]);
+
+  const transparent = isHome && atTop && !open;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[var(--color-navy)]/95 text-white backdrop-blur-md">
+    <header
+      className={cn(
+        "sticky top-0 z-40 border-b text-white transition-[background-color,border-color] duration-300",
+        transparent
+          ? "border-white/0 bg-transparent"
+          : "border-white/10 bg-[var(--color-navy)]/95 backdrop-blur-md",
+      )}
+    >
       <Container className="flex h-14 items-center justify-between gap-4 lg:h-16">
         <Link href="/" className="flex min-w-0 items-center gap-2.5">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-emerald)]">

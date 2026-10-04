@@ -8,6 +8,17 @@
   --radius-lg: 0.75rem;
   --shadow-soft: 0 1px 2px rgb(11 31 58 / 0.04), 0 8px 24px rgb(11 31 58 / 0.06);
   --shadow-elevated: 0 4px 12px rgb(11 31 58 / 0.08), 0 16px 40px rgb(11 31 58 / 0.08);
+  /* Homepage hero: very slow one-time "Ken Burns" zoom (disabled for prefers-reduced-motion). */
+  --animate-gb-kenburns: gb-kenburns 28s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+
+  @keyframes gb-kenburns {
+    from {
+      transform: scale(1.0);
+    }
+    to {
+      transform: scale(1.07);
+    }
+  }
 }
 
 :root {
