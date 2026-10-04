@@ -11,11 +11,11 @@ export const siteConfig = {
   market: "Pakistan",
   futureLocales: ["ur", "ar"] as const,
   contactEmail:
-    process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "gb.intltravel@gmail.com",
-  /** Public contact channels for Quick Assistance (overridable via NEXT_PUBLIC_*). */
-  contactPhone: process.env.NEXT_PUBLIC_CONTACT_PHONE ?? "+92 346 2559008",
+    process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim() || "gb.intltravel@gmail.com",
+  /** Public contact channels (overridable via NEXT_PUBLIC_*; blank values fall back to these). */
+  contactPhone: process.env.NEXT_PUBLIC_CONTACT_PHONE?.trim() || "+92 346 2559008",
   contactWhatsApp:
-    process.env.NEXT_PUBLIC_CONTACT_WHATSAPP ?? "+971 52 205 1485",
+    process.env.NEXT_PUBLIC_CONTACT_WHATSAPP?.trim() || "+971 52 205 1485",
   social: {
     twitter: "",
     facebook: "",
