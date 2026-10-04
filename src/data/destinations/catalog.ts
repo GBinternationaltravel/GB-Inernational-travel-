@@ -91,7 +91,7 @@ const city = (
       {
         id: `${input.citySlug}-visa`,
         question: `Does this page confirm my visa for ${input.cityName}?`,
-        answer: `No. Visa information here is a placeholder reminder only. Always verify official entry requirements for your nationality.`,
+        answer: `No. Visa information here is a general reminder only. Always verify official entry requirements for your nationality.`,
         category: "travel",
       },
     ],
