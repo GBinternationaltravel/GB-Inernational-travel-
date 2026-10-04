@@ -246,7 +246,7 @@ export default async function AdminBookingDetailPage({ params }: Params) {
         )}
       </section>
 
-      <BookingStatusForm
+      <BookingStatusForm key={booking.status}
         reference={booking.reference}
         allowedTransitions={booking.allowedTransitions}
       />
