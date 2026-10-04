@@ -306,5 +306,8 @@ describe("Phase 8 protected My Trips data", () => {
     );
     assert.match(safe.contactEmailMasked, /\*\*\*/);
     assert.ok(!JSON.stringify(safe).includes("PK9988776"));
+    // Customer-facing notice never describes the GB service fee.
+    assert.doesNotMatch(safe.pricingNotice, /service fee|per seat/i);
+    assert.match(safe.pricingNotice, /includes all taxes and fees/);
   });
 });

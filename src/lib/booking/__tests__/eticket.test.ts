@@ -173,9 +173,18 @@ describe("buildETicketView", () => {
   it("uses the stored price snapshot, not booking totals or a recalculation", () => {
     const view = buildETicketView({ booking: booking() });
     assert.equal(view.price.total, 33012);
-    assert.equal(view.price.serviceFee, 2000);
-    assert.equal(view.price.airlineFare, 31012);
-    assert.equal(view.price.serviceFeeBasis, "PKR 1,000 per seat × 2");
+    assert.equal(view.price.currency, "PKR");
+  });
+
+  it("shows customers one all-inclusive price and never the GB service fee", () => {
+    const view = buildETicketView({ booking: booking() });
+    assert.deepEqual(Object.keys(view.price).sort(), ["currency", "total"]);
+    const json = JSON.stringify(view);
+    assert.doesNotMatch(json, /service ?fee|serviceFee/i);
+    assert.doesNotMatch(json, /per seat/i);
+    // Neither the fee (2,000) nor the supplier fare before the fee (31,012) is exposed.
+    assert.ok(!json.includes("31012"));
+    assert.ok(!json.includes(":2000"));
   });
 
   it("collects PNR, real ticket numbers, issue date and passengers", () => {

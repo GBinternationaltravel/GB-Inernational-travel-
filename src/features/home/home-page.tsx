@@ -46,7 +46,7 @@ export function HomePage() {
       <Section>
         <SectionHeader
           title="Popular flights from Pakistan"
-          description="Sample routes for development. Prices include GB service fee where shown — not live airline fares."
+          description="Sample routes for development. Prices include all taxes and fees — not live airline fares."
         />
         <div className="grid gap-0 divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
           {sampleOffers.map((offer) => {
@@ -73,7 +73,7 @@ export function HomePage() {
                     {formatPrice(pricing.total, pricing.currency)}
                   </p>
                   <p className="text-xs text-[var(--color-muted-soft)]">
-                    Incl. service fee {formatPrice(pricing.fees, pricing.currency)}
+                    Incl. taxes &amp; fees
                   </p>
                 </div>
               </div>
@@ -154,7 +154,7 @@ export function HomePage() {
           <CompanionItem
             icon={<ShieldCheck className="h-5 w-5" aria-hidden />}
             title="Secure booking"
-            text="Clear pricing with supplier fare and GB service fee shown separately."
+            text="Clear, all-inclusive pricing: the fare you see includes taxes and fees."
           />
           <CompanionItem
             icon={<CloudSun className="h-5 w-5" aria-hidden />}
@@ -182,7 +182,7 @@ export function HomePage() {
         <ul className="grid gap-3 text-sm text-[var(--color-muted)] sm:grid-cols-2">
           <li className="flex gap-2">
             <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-emerald)]" />
-            PKR-first booking with transparent service fees
+            PKR-first booking with clear, all-inclusive fares
           </li>
           <li className="flex gap-2">
             <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-emerald)]" />

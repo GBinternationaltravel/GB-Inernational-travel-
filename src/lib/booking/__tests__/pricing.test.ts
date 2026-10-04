@@ -8,6 +8,12 @@ import {
   markupOptionsForOffer,
   serviceFeePerSeat,
 } from "@/lib/booking/pricing";
+import {
+  CUSTOMER_FARE_LABEL,
+  customerOfferTotal,
+  customerPricingNotice,
+} from "@/lib/booking/customer-price";
+import { defaultFlightFilters, filterOffers, sortOffers } from "@/lib/flights/filter-sort";
 import type { FlightOffer } from "@/types/flight";
 
 function offer(overrides: Partial<FlightOffer> = {}): FlightOffer {
@@ -151,5 +157,44 @@ describe("Offer price snapshot", () => {
     assert.equal(describeServiceFee({ markupRate: 0.05 }), "5%");
     assert.equal(describeServiceFee({ markupRate: 0.035 }), "3.5%");
     assert.equal(describeServiceFee(null), null);
+  });
+});
+
+describe("Customer price display (GB service fee folded in)", () => {
+  it("shows customers the total with the fee already included", () => {
+    assert.equal(customerOfferTotal(offer({ totalPrice: 90_542 })), 92_042);
+    assert.equal(customerOfferTotal(offer({ totalPrice: 25_000 })), 26_000);
+    // Same number the charged booking total comes from.
+    const o = offer({ totalPrice: 150_000 });
+    assert.equal(customerOfferTotal(o), buildOfferSnapshot(o).pricing.total);
+  });
+
+  it("uses customer wording with no service-fee line or amount", () => {
+    assert.equal(CUSTOMER_FARE_LABEL, "Fare (incl. taxes & fees)");
+    for (const notice of [customerPricingNotice(true), customerPricingNotice(false)]) {
+      assert.doesNotMatch(notice, /service fee|per seat|GB fee|PKR|\d/i);
+      assert.match(notice, /includes all taxes and fees/);
+    }
+  });
+
+  it("sorts cheapest-first by the customer total, not the supplier fare", () => {
+    const pax = { adults: 1, children: 0, infants: 1 };
+    // Supplier 31,000 incl. 3,000 infant fare → seat 28,000 → fee 1,000 → customer 32,000.
+    const a = offer({ id: "a", totalPrice: 31_000, pricedPassengers: pax, infantFareTotal: 3_000 });
+    // Supplier 30,800, infant fare 0 → seat 30,800 → fee 1,500 → customer 32,300.
+    const b = offer({ id: "b", totalPrice: 30_800, pricedPassengers: pax, infantFareTotal: 0 });
+    assert.deepEqual(
+      sortOffers([b, a], "cheapest").map((o) => o.id),
+      ["a", "b"],
+    );
+  });
+
+  it("filters prices against the customer total", () => {
+    const o = offer({ id: "x", totalPrice: 90_542 }); // customer 92,042
+    const base = defaultFlightFilters();
+    assert.equal(filterOffers([o], { ...base, maxPrice: 91_000 }).length, 0);
+    assert.equal(filterOffers([o], { ...base, maxPrice: 92_042 }).length, 1);
+    assert.equal(filterOffers([o], { ...base, minPrice: 92_000 }).length, 1);
+    assert.equal(filterOffers([o], { ...base, minPrice: 92_043 }).length, 0);
   });
 });

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { FlightFiltersState, FlightOffer, StopsFilter, TimeOfDayBucket, DurationBucket } from "@/types/flight";
 import { getAirlineById } from "@/data/airlines";
+import { customerOfferTotal } from "@/lib/booking/customer-price";
 
 const stopOptions: Array<{ value: StopsFilter; label: string }> = [
   { value: "nonstop", label: "Nonstop" },
@@ -42,8 +43,10 @@ export function FlightFiltersPanel({
   onClear: () => void;
 }) {
   const airlineIds = Array.from(new Set(offers.map((offer) => offer.airlineId)));
-  const priceFloor = offers.length ? Math.min(...offers.map((o) => o.totalPrice)) : 0;
-  const priceCeil = offers.length ? Math.max(...offers.map((o) => o.totalPrice)) : 0;
+  // Customer totals (fee included) — the same prices shown on the result cards.
+  const customerTotals = offers.map((o) => customerOfferTotal(o));
+  const priceFloor = customerTotals.length ? Math.min(...customerTotals) : 0;
+  const priceCeil = customerTotals.length ? Math.max(...customerTotals) : 0;
 
   return (
     <div className="space-y-6">

@@ -445,7 +445,7 @@ async function seedFaqs() {
     {
       question: "Are the flight prices on this site live airline fares?",
       answer:
-        "Mock and sandbox results are clearly labeled. Live Travelport inventory requires configured supplier credentials. The GB service fee is applied server-side on the supplier fare.",
+        "Mock and sandbox results are clearly labeled. Live Travelport inventory requires configured supplier credentials. The fare shown already includes all taxes and fees.",
       category: "flights",
       sortOrder: 2,
     },
@@ -456,9 +456,9 @@ async function seedFaqs() {
       sortOrder: 3,
     },
     {
-      question: "How is the GB service fee calculated?",
+      question: "Does the price I see include everything?",
       answer:
-        "A fixed amount per passenger seat, based on that seat's fare + taxes: PKR 1,000 up to PKR 30,000, PKR 1,500 from PKR 30,001 to PKR 100,000, and PKR 2,500 above PKR 100,000. Adults and children pay it; infants without a seat do not. It is calculated once on the server and never compounded on refresh.",
+        "Yes. The fare shown on search results, at checkout and on your e-ticket already includes all taxes and fees. The amount you pay is the total shown, with nothing added at payment.",
       category: "payments",
       sortOrder: 4,
     },
@@ -661,7 +661,7 @@ async function seedDeals() {
       originCode: "LHE",
       destinationCode: "IST",
       price: 78000,
-      description: "Sample marketing deal in the PKR 30,001–100,000 service-fee band for pricing demos.",
+      description: "Sample marketing fare card for pricing demos.",
     },
   ];
   for (const deal of deals) {

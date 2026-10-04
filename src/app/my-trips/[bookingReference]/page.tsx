@@ -25,6 +25,7 @@ import { listNotificationsForBooking } from "@/lib/notifications/notification-st
 import { getNotificationEnv } from "@/config/notifications";
 import { getWeatherProviderStatus } from "@/services/weather-service";
 import { eTicketPath, isBookingTicketed } from "@/lib/booking/eticket";
+import { CUSTOMER_FARE_LABEL } from "@/lib/booking/customer-price";
 
 type Params = { params: Promise<{ bookingReference: string }> };
 
@@ -181,9 +182,7 @@ export default async function TripDetailsPage({ params }: Params) {
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <Item label="Email" value={trip.contactEmailMasked} />
             <Item label="Phone" value={trip.contactPhoneMasked} />
-            <Item label="Base fare" value={formatPrice(trip.subtotalAmount, trip.currency)} />
-            <Item label="Taxes" value={formatPrice(trip.taxesAmount, trip.currency)} />
-            <Item label="GB service fee" value={formatPrice(trip.feesAmount, trip.currency)} />
+            <Item label={CUSTOMER_FARE_LABEL} value={formatPrice(trip.totalAmount, trip.currency)} />
             <Item label="Total" value={formatPrice(trip.totalAmount, trip.currency)} />
           </dl>
           <Alert variant="warning" className="mt-4">

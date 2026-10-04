@@ -4,7 +4,8 @@ import { Plane } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { FlightOffer } from "@/types/flight";
-import { calculateOfferPriceSnapshot, describeServiceFee } from "@/lib/booking/pricing";
+import { calculateOfferPriceSnapshot } from "@/lib/booking/pricing";
+import { CUSTOMER_FARE_LABEL } from "@/lib/booking/customer-price";
 import {
   formatDuration,
   formatFlightTime,
@@ -27,8 +28,8 @@ export function FlightResultCard({
   if (!first || !last) return null;
 
   const airline = first.airline;
+  // Customers see one all-inclusive fare; the GB service fee is never shown separately.
   const pricing = calculateOfferPriceSnapshot(offer);
-  const feeBasis = describeServiceFee(pricing);
 
   return (
     <article className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-elevated)] sm:p-5">
@@ -100,23 +101,9 @@ export function FlightResultCard({
           </div>
           <dl className="mt-3 grid max-w-md gap-1 text-sm">
             <div className="flex justify-between gap-4">
-              <dt className="text-[var(--color-muted)]">Base fare</dt>
+              <dt className="text-[var(--color-muted)]">{CUSTOMER_FARE_LABEL}</dt>
               <dd className="font-medium tabular-nums">
-                {formatPrice(pricing.baseFare, pricing.currency)}
-              </dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-[var(--color-muted)]">Taxes</dt>
-              <dd className="font-medium tabular-nums">
-                {formatPrice(pricing.taxes, pricing.currency)}
-              </dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-[var(--color-muted)]">
-                GB service fee{feeBasis ? ` (${feeBasis})` : ""}
-              </dt>
-              <dd className="font-medium tabular-nums">
-                {formatPrice(pricing.fees, pricing.currency)}
+                {formatPrice(pricing.total, pricing.currency)}
               </dd>
             </div>
             <div className="flex justify-between gap-4 border-t border-[var(--color-border)] pt-1.5">

@@ -16,6 +16,7 @@ import {
   formatTicketDate,
 } from "@/lib/booking/eticket";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { CUSTOMER_FARE_LABEL } from "@/lib/booking/customer-price";
 
 type Params = { params: Promise<{ bookingReference: string }> };
 
@@ -208,11 +209,7 @@ export default async function ETicketPage({ params }: Params) {
             <section>
               <SectionTitle>Payment</SectionTitle>
               <dl className="mt-2 space-y-1">
-                <Row label="Airline fare (incl. taxes)" value={formatTicketAmount(price.airlineFare, price.currency)} />
-                <Row
-                  label={`GB service fee${price.serviceFeeBasis ? ` (${price.serviceFeeBasis})` : ""}`}
-                  value={formatTicketAmount(price.serviceFee, price.currency)}
-                />
+                <Row label={CUSTOMER_FARE_LABEL} value={formatTicketAmount(price.total, price.currency)} />
                 <div className="flex items-baseline justify-between gap-3 border-t border-[var(--color-border)] pt-1.5">
                   <dt className="font-semibold">Total paid</dt>
                   <dd className="text-base font-bold text-[var(--color-navy)]">

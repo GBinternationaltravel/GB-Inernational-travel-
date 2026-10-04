@@ -20,6 +20,7 @@ import {
 } from "@/lib/flights/filter-sort";
 import { cabinClasses, passengerTypeLabels } from "@/config/booking";
 import type { SafeBookingView } from "@/types/booking";
+import { CUSTOMER_FARE_LABEL } from "@/lib/booking/customer-price";
 
 type RevalidateState =
   | { kind: "idle" }
@@ -434,16 +435,8 @@ export function BookingReviewClient() {
               <h2 className="font-display text-xl">Price breakdown</h2>
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex justify-between gap-3">
-                  <dt>Base fare</dt>
-                  <dd>{formatPrice(booking.subtotalAmount, booking.currency)}</dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt>Taxes</dt>
-                  <dd>{formatPrice(booking.taxesAmount, booking.currency)}</dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt>GB service fee</dt>
-                  <dd>{formatPrice(booking.feesAmount, booking.currency)}</dd>
+                  <dt>{CUSTOMER_FARE_LABEL}</dt>
+                  <dd>{formatPrice(booking.totalAmount, booking.currency)}</dd>
                 </div>
                 <div className="flex justify-between gap-3 border-t border-[var(--color-border)] pt-3 font-display text-xl">
                   <dt>Total</dt>

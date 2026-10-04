@@ -6,7 +6,7 @@
 import { cabinClasses, passengerTypeLabels } from "@/config/booking";
 import { getAirlineByCode, getAirlineById } from "@/data/airlines";
 import { getAirportByCode } from "@/data/airports";
-import { describeServiceFee, type OfferSnapshot } from "@/lib/booking/pricing";
+import type { OfferSnapshot } from "@/lib/booking/pricing";
 
 /** All e-ticket times are shown in Pakistan local time. */
 export const ETICKET_TIME_ZONE = "Asia/Karachi";
@@ -246,11 +246,12 @@ export type ETicketView = {
     cabin: string;
     baggage: string;
   };
+  /**
+   * Customer-facing price: one all-inclusive amount. The GB service fee is folded in
+   * and deliberately not exposed here (admin pages show the full breakdown).
+   */
   price: {
     currency: string;
-    airlineFare: number;
-    serviceFee: number;
-    serviceFeeBasis: string | null;
     total: number;
   };
 };
@@ -303,11 +304,6 @@ export function buildETicketView(input: {
   const domestic = isDomesticRoute(offer.origin, offer.destination);
   const currency = pricing?.currency || booking.currency || "PKR";
   const total = typeof pricing?.total === "number" ? pricing.total : booking.totalAmount;
-  const serviceFee = typeof pricing?.fees === "number" ? pricing.fees : booking.feesAmount;
-  const airlineFare =
-    typeof pricing?.supplierFare === "number"
-      ? pricing.supplierFare
-      : Math.max(0, total - serviceFee);
 
   const airlineCode = airlineCodeFor(offer);
   const airlineName =
@@ -355,9 +351,6 @@ export function buildETicketView(input: {
     },
     price: {
       currency,
-      airlineFare,
-      serviceFee,
-      serviceFeeBasis: describeServiceFee(pricing),
       total,
     },
   };

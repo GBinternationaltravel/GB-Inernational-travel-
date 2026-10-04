@@ -2,6 +2,7 @@ import type { StoredBooking } from "@/lib/booking/repository";
 import { maskEmail, maskPassport, maskPhone } from "@/lib/booking/masking";
 import { getFlightSupplierEnv } from "@/config/flight-supplier";
 import type { SafeBookingView } from "@/types/booking";
+import { customerPricingNotice } from "@/lib/booking/customer-price";
 
 export function toSafeBookingView(
   booking: StoredBooking,
@@ -34,7 +35,9 @@ export function toSafeBookingView(
       nationality: passenger.nationality,
       passportMasked: maskPassport(passenger.passportNumber),
     })),
-    pricingNotice: booking.offerSnapshot.pricing.notice,
+    // Customer-safe wording; the stored snapshot notice describes the GB service fee
+    // and is only shown on admin pages.
+    pricingNotice: customerPricingNotice(booking.offerSnapshot.isMock),
     supplier: {
       supplierCode,
       supplierBookingRef: booking.supplierBookingRef ?? null,

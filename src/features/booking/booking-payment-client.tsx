@@ -12,6 +12,7 @@ import { Container } from "@/components/ui/container";
 import { BookingProgress } from "@/features/booking/booking-progress";
 import { formatPrice } from "@/lib/flights/filter-sort";
 import type { SafeBookingView } from "@/types/booking";
+import { CUSTOMER_FARE_LABEL } from "@/lib/booking/customer-price";
 
 export function BookingPaymentClient() {
   const searchParams = useSearchParams();
@@ -133,16 +134,8 @@ export function BookingPaymentClient() {
             </p>
             <dl className="mt-3 space-y-1 text-sm text-[var(--color-muted)]">
               <div className="flex justify-between gap-3">
-                <dt>Base fare</dt>
-                <dd>{formatPrice(booking.subtotalAmount, booking.currency)}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt>Taxes</dt>
-                <dd>{formatPrice(booking.taxesAmount, booking.currency)}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt>GB service fee</dt>
-                <dd>{formatPrice(booking.feesAmount, booking.currency)}</dd>
+                <dt>{CUSTOMER_FARE_LABEL}</dt>
+                <dd>{formatPrice(booking.totalAmount, booking.currency)}</dd>
               </div>
             </dl>
             <Alert variant="warning" className="mt-4">

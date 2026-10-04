@@ -5,6 +5,7 @@ import type {
   FlightSortOption,
   TimeOfDayBucket,
 } from "@/types/flight";
+import { customerOfferTotal } from "@/lib/booking/customer-price";
 
 export const defaultFlightFilters = (): FlightFiltersState => ({
   minPrice: null,
@@ -38,8 +39,11 @@ export function getDurationBucket(minutes: number): DurationBucket {
  * This is an internal demo ranking — not an airline recommendation engine.
  * Weights: lower price, fewer stops, shorter duration, earlier daytime departure.
  */
-export function scoreRecommended(offer: FlightOffer): number {
-  const priceScore = Math.max(0, 400_000 - offer.totalPrice) / 1000;
+export function scoreRecommended(
+  offer: FlightOffer,
+  customerTotal: number = customerOfferTotal(offer),
+): number {
+  const priceScore = Math.max(0, 400_000 - customerTotal) / 1000;
   const stopScore = (2 - Math.min(offer.stops, 2)) * 40;
   const durationScore = Math.max(0, 900 - offer.durationMinutes) / 10;
   const departureHour = new Date(offer.segments[0]?.departureAt ?? "").getHours();
@@ -54,9 +58,12 @@ export function sortOffers(
   sort: FlightSortOption,
 ): FlightOffer[] {
   const copy = [...offers];
+  // Price sorting uses what the customer pays (GB service fee included), not the supplier fare.
+  const totals = new Map(offers.map((offer) => [offer, customerOfferTotal(offer)] as const));
+  const totalOf = (offer: FlightOffer) => totals.get(offer) ?? customerOfferTotal(offer);
   switch (sort) {
     case "cheapest":
-      return copy.sort((a, b) => a.totalPrice - b.totalPrice);
+      return copy.sort((a, b) => totalOf(a) - totalOf(b));
     case "fastest":
       return copy.sort((a, b) => a.durationMinutes - b.durationMinutes);
     case "earliest_departure":
@@ -73,7 +80,9 @@ export function sortOffers(
       });
     case "recommended":
     default:
-      return copy.sort((a, b) => scoreRecommended(b) - scoreRecommended(a));
+      return copy.sort(
+        (a, b) => scoreRecommended(b, totalOf(b)) - scoreRecommended(a, totalOf(a)),
+      );
   }
 }
 
@@ -82,8 +91,12 @@ export function filterOffers(
   filters: FlightFiltersState,
 ): FlightOffer[] {
   return offers.filter((offer) => {
-    if (filters.minPrice != null && offer.totalPrice < filters.minPrice) return false;
-    if (filters.maxPrice != null && offer.totalPrice > filters.maxPrice) return false;
+    // Price filters compare against the customer total (fee included) shown on the cards.
+    if (filters.minPrice != null || filters.maxPrice != null) {
+      const total = customerOfferTotal(offer);
+      if (filters.minPrice != null && total < filters.minPrice) return false;
+      if (filters.maxPrice != null && total > filters.maxPrice) return false;
+    }
 
     if (filters.stops.length > 0) {
       const matchesStop = filters.stops.some((stop) => {
