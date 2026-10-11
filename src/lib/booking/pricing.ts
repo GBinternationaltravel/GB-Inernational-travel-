@@ -47,10 +47,9 @@ export type PriceSnapshot = {
   notice: string;
 };
 
-export type OfferSnapshot = {
+export type OfferLegSnapshot = {
   isMock: boolean;
   offerId: string;
-  /** Alias of offerId for clarity in supplier-neutral architecture */
   internalOfferId: string;
   supplierCode: string;
   supplierOfferId: string;
@@ -72,7 +71,16 @@ export type OfferSnapshot = {
   baggageKg: number;
   baggageIncluded: boolean;
   refundable: boolean;
+  supplierFare?: number;
+  baseFare?: number;
+  taxes?: number;
+};
+
+export type OfferSnapshot = OfferLegSnapshot & {
   pricing: PriceSnapshot;
+  outboundSupplierFare?: number;
+  returnSupplierFare?: number;
+  returnLeg?: OfferLegSnapshot;
 };
 
 /** Server-side only. Never trust browser-provided totals. */
@@ -81,6 +89,69 @@ export function calculateMockPriceSnapshot(offer: FlightOffer): PriceSnapshot {
 }
 
 export function calculateOfferPriceSnapshot(offer: FlightOffer): PriceSnapshot {
+  return calculateCombinedOfferPriceSnapshot([offer]);
+}
+
+/**
+ * Server-side combined pricing. Markup is applied ONCE to the summed
+ * supplier fare (outbound + return), never per-leg.
+ */
+export function calculateCombinedOfferPriceSnapshot(offers: FlightOffer[]): PriceSnapshot {
+  if (offers.length === 0) {
+    throw new Error("INVALID_OFFER");
+  }
+
+  const supplierFare = offers.reduce((sum, offer) => sum + Math.round(offer.totalPrice), 0);
+  const taxes = offers.reduce((sum, offer) => {
+    const offerSupplier = Math.round(offer.totalPrice);
+    return (
+      sum +
+      (typeof offer.taxes === "number"
+        ? Math.round(offer.taxes)
+        : Math.round(offerSupplier * bookingPricingConfig.taxRate))
+    );
+  }, 0);
+  const baseFare = offers.reduce((sum, offer) => {
+    const offerSupplier = Math.round(offer.totalPrice);
+    const offerTaxes =
+      typeof offer.taxes === "number"
+        ? Math.round(offer.taxes)
+        : Math.round(offerSupplier * bookingPricingConfig.taxRate);
+    return (
+      sum +
+      (typeof offer.baseFare === "number"
+        ? Math.round(offer.baseFare)
+        : Math.max(0, offerSupplier - offerTaxes))
+    );
+  }, 0);
+
+  const { markup, rate, customerTotal } = calculateAgencyMarkup(supplierFare);
+  const ratePct = (rate * 100).toFixed(rate === 0.035 ? 1 : 0);
+  const isMock = offers.some((offer) => offer.isMock);
+  const primary = offers[0]!;
+
+  return {
+    currency: primary.currency || bookingPricingConfig.currency,
+    baseFare,
+    taxes,
+    fees: markup,
+    supplierFare,
+    markupRate: rate,
+    total: customerTotal,
+    isMock,
+    notice: isMock
+      ? `Mock pricing with ${ratePct}% GB service fee on the combined supplier fare. Not a live airline ticket.`
+      : `Combined supplier fare plus ${ratePct}% GB service fee. Amount is revalidated before payment. Payment is not ticket confirmation.`,
+  };
+}
+
+function toOfferLegSnapshot(offer: FlightOffer): OfferLegSnapshot {
+  const first = offer.segments[0];
+  const last = offer.segments[offer.segments.length - 1];
+  if (!first || !last) {
+    throw new Error("INVALID_OFFER");
+  }
+
   const supplierFare = Math.round(offer.totalPrice);
   const taxes =
     typeof offer.taxes === "number"
@@ -90,31 +161,6 @@ export function calculateOfferPriceSnapshot(offer: FlightOffer): PriceSnapshot {
     typeof offer.baseFare === "number"
       ? Math.round(offer.baseFare)
       : Math.max(0, supplierFare - taxes);
-
-  const { markup, rate, customerTotal } = calculateAgencyMarkup(supplierFare);
-  const ratePct = (rate * 100).toFixed(rate === 0.035 ? 1 : 0);
-
-  return {
-    currency: offer.currency || bookingPricingConfig.currency,
-    baseFare,
-    taxes,
-    fees: markup,
-    supplierFare,
-    markupRate: rate,
-    total: customerTotal,
-    isMock: offer.isMock,
-    notice: offer.isMock
-      ? `Mock pricing with ${ratePct}% GB service fee on supplier fare. Not a live airline ticket.`
-      : `Supplier fare plus ${ratePct}% GB service fee. Amount is revalidated before payment. Payment is not ticket confirmation.`,
-  };
-}
-
-export function buildOfferSnapshot(offer: FlightOffer): OfferSnapshot {
-  const first = offer.segments[0];
-  const last = offer.segments[offer.segments.length - 1];
-  if (!first || !last) {
-    throw new Error("INVALID_OFFER");
-  }
 
   return {
     isMock: offer.isMock,
@@ -140,6 +186,24 @@ export function buildOfferSnapshot(offer: FlightOffer): OfferSnapshot {
     baggageKg: offer.baggageKg,
     baggageIncluded: offer.baggageIncluded,
     refundable: offer.refundable,
-    pricing: calculateOfferPriceSnapshot(offer),
+    supplierFare,
+    baseFare,
+    taxes,
+  };
+}
+
+export function buildOfferSnapshot(offer: FlightOffer, returnOffer?: FlightOffer): OfferSnapshot {
+  const outbound = toOfferLegSnapshot(offer);
+  const inbound = returnOffer ? toOfferLegSnapshot(returnOffer) : undefined;
+  const pricing = returnOffer
+    ? calculateCombinedOfferPriceSnapshot([offer, returnOffer])
+    : calculateOfferPriceSnapshot(offer);
+
+  return {
+    ...outbound,
+    pricing,
+    outboundSupplierFare: outbound.supplierFare,
+    returnSupplierFare: inbound?.supplierFare,
+    returnLeg: inbound,
   };
 }

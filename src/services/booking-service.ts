@@ -17,6 +17,7 @@ import { redactForLogs } from "@/lib/booking/masking";
 import { writeAuditLog } from "@/lib/security/audit";
 import type { SafeBookingView } from "@/types/booking";
 import { toSafeBookingView } from "@/lib/booking/to-safe-view";
+import type { FlightOffer } from "@/types/flight";
 
 export type { SafeBookingView } from "@/types/booking";
 
@@ -49,6 +50,58 @@ function toSafeView(
   return toSafeBookingView(booking, store);
 }
 
+async function revalidateStoredOffers(current: StoredBooking) {
+  const snap = current.offerSnapshot;
+  const outbound = await revalidateFlightOffer({
+    internalOfferId: snap.internalOfferId || current.selectedOfferId,
+    supplierOfferId: current.supplierOfferId || snap.supplierOfferId,
+    supplierCode: current.supplierCode || snap.supplierCode,
+    supplierSessionRef: current.supplierSessionRef ?? snap.supplierSessionRef,
+    expectedTotal:
+      snap.outboundSupplierFare ??
+      snap.pricing.supplierFare - (snap.returnSupplierFare ?? 0),
+    currency: current.currency,
+    departureDate: snap.departureAt.slice(0, 10),
+  });
+
+  if (outbound.status === "EXPIRED" || outbound.status === "NO_AVAILABILITY") {
+    return { status: outbound.status, snapshot: null as ReturnType<typeof buildOfferSnapshot> | null };
+  }
+
+  if (!snap.returnLeg) {
+    if (!outbound.offer) {
+      return { status: "FAILED" as const, snapshot: null };
+    }
+    return {
+      status: outbound.status === "PRICE_CHANGED" ? ("PRICE_CHANGED" as const) : outbound.status,
+      snapshot: buildOfferSnapshot(outbound.offer),
+    };
+  }
+
+  const inbound = await revalidateFlightOffer({
+    internalOfferId: snap.returnLeg.internalOfferId,
+    supplierOfferId: snap.returnLeg.supplierOfferId,
+    supplierCode: snap.returnLeg.supplierCode,
+    supplierSessionRef: snap.returnLeg.supplierSessionRef,
+    expectedTotal: snap.returnSupplierFare,
+    currency: current.currency,
+    departureDate: snap.returnLeg.departureAt.slice(0, 10),
+  });
+
+  if (inbound.status === "EXPIRED" || inbound.status === "NO_AVAILABILITY") {
+    return { status: inbound.status, snapshot: null };
+  }
+  if (!outbound.offer || !inbound.offer) {
+    return { status: "FAILED" as const, snapshot: null };
+  }
+
+  const changed = outbound.status === "PRICE_CHANGED" || inbound.status === "PRICE_CHANGED";
+  return {
+    status: changed ? ("PRICE_CHANGED" as const) : ("VALID" as const),
+    snapshot: buildOfferSnapshot(outbound.offer, inbound.offer),
+  };
+}
+
 export async function createOrUpdateBookingDraft(
   rawInput: unknown,
   existing?: { reference: string; accessToken: string },
@@ -63,7 +116,11 @@ export async function createOrUpdateBookingDraft(
   }
 
   const input: BookingDraftInput = parsed.data;
-  const offer = await getFlightOfferById(input.offerId);
+  const offer = await getFlightOfferById(input.offerId, {
+    departureDate: input.departureDate,
+    origin: input.origin,
+    destination: input.destination,
+  });
   if (!offer) {
     throw new BookingServiceError(
       "Your selected flight is no longer available in this browser session.",
@@ -86,9 +143,44 @@ export async function createOrUpdateBookingDraft(
     );
   }
 
+  let returnOffer: FlightOffer | undefined;
+  if (input.tripType === "ROUND_TRIP") {
+    if (!input.returnOfferId || !input.returnDate) {
+      throw new BookingServiceError(
+        "Please select a return flight.",
+        "VALIDATION",
+      );
+    }
+    returnOffer =
+      (await getFlightOfferById(input.returnOfferId, {
+        departureDate: input.returnDate,
+        origin: input.destination,
+        destination: input.origin,
+      })) ?? undefined;
+    if (!returnOffer) {
+      throw new BookingServiceError(
+        "Your selected return flight is no longer available in this browser session.",
+        "OFFER_NOT_FOUND",
+      );
+    }
+    const returnFirst = returnOffer.segments[0];
+    const returnLast = returnOffer.segments[returnOffer.segments.length - 1];
+    if (
+      !returnFirst ||
+      !returnLast ||
+      returnFirst.origin.iataCode !== input.destination.toUpperCase() ||
+      returnLast.destination.iataCode !== input.origin.toUpperCase()
+    ) {
+      throw new BookingServiceError(
+        "Your selected return flight does not match this search.",
+        "OFFER_NOT_FOUND",
+      );
+    }
+  }
+
   let snapshot;
   try {
-    snapshot = buildOfferSnapshot(offer);
+    snapshot = buildOfferSnapshot(offer, returnOffer);
   } catch {
     throw new BookingServiceError(
       "We couldn't prepare this flight for booking. Please select another flight.",
@@ -290,18 +382,7 @@ export async function applyAcceptedSupplierPrice(
     );
   }
 
-  const revalidated = await revalidateFlightOffer({
-    internalOfferId: current.offerSnapshot.internalOfferId || current.selectedOfferId,
-    supplierOfferId: current.supplierOfferId || current.offerSnapshot.supplierOfferId,
-    supplierCode: current.supplierCode || current.offerSnapshot.supplierCode,
-    supplierSessionRef:
-      current.supplierSessionRef ?? current.offerSnapshot.supplierSessionRef,
-    // Supplier compares against supplier fare — never the customer total with markup.
-    expectedTotal:
-      current.offerSnapshot.pricing.supplierFare ??
-      current.subtotalAmount + current.taxesAmount,
-    currency: current.currency,
-  });
+  const revalidated = await revalidateStoredOffers(current);
 
   if (revalidated.status === "EXPIRED" || revalidated.status === "NO_AVAILABILITY") {
     throw new BookingServiceError(
@@ -310,8 +391,8 @@ export async function applyAcceptedSupplierPrice(
     );
   }
 
-  const offer = revalidated.offer;
-  if (!offer) {
+  const snapshot = revalidated.snapshot;
+  if (!snapshot) {
     throw new BookingServiceError(
       "We couldn't revalidate this flight price right now.",
       "PROVIDER",
@@ -319,7 +400,6 @@ export async function applyAcceptedSupplierPrice(
   }
 
   // Rebuild markup from the new supplier offer once (never reuse previous markup).
-  const snapshot = buildOfferSnapshot(offer);
   if (Math.abs(snapshot.pricing.total - input.acceptedTotal) >= 1) {
     throw new BookingServiceError(
       "The supplier price changed again. Please review the updated amount.",
@@ -341,8 +421,8 @@ export async function applyAcceptedSupplierPrice(
     totalAmount: snapshot.pricing.total,
     currency: snapshot.pricing.currency,
     offerSnapshot: snapshot,
-    supplierSessionRef: offer.supplierSessionRef ?? current.supplierSessionRef,
-    offerExpiresAt: offer.expiresAt ?? current.offerExpiresAt,
+    supplierSessionRef: snapshot.supplierSessionRef ?? current.supplierSessionRef,
+    offerExpiresAt: snapshot.expiresAt ?? current.offerExpiresAt,
   });
 
   if (!updated) {
@@ -402,17 +482,7 @@ export async function createSupplierReservationForBooking(
     };
   }
 
-  const revalidated = await revalidateFlightOffer({
-    internalOfferId: current.offerSnapshot.internalOfferId || current.selectedOfferId,
-    supplierOfferId: current.supplierOfferId || current.offerSnapshot.supplierOfferId,
-    supplierCode: current.supplierCode || current.offerSnapshot.supplierCode,
-    supplierSessionRef:
-      current.supplierSessionRef ?? current.offerSnapshot.supplierSessionRef,
-    expectedTotal:
-      current.offerSnapshot.pricing.supplierFare ??
-      current.subtotalAmount + current.taxesAmount,
-    currency: current.currency,
-  });
+  const revalidated = await revalidateStoredOffers(current);
 
   if (revalidated.status === "EXPIRED" || revalidated.status === "NO_AVAILABILITY") {
     throw new BookingServiceError(
@@ -428,7 +498,7 @@ export async function createSupplierReservationForBooking(
   }
 
   const sessionRef =
-    revalidated.offer?.supplierSessionRef ??
+    revalidated.snapshot?.supplierSessionRef ??
     current.supplierSessionRef ??
     current.offerSnapshot.supplierSessionRef;
 

@@ -18,7 +18,7 @@ type RouteSeed = {
  * Primary mock routes used for development search results.
  * Prices and times are placeholder demo values — not live fares.
  */
-const routeSeeds: RouteSeed[] = [
+const outboundRouteSeeds: RouteSeed[] = [
   { origin: "ISB", destination: "DXB", baseDurationMinutes: 225, basePrice: 74500, airlineIds: ["ek", "pk", "er", "pa"] },
   { origin: "LHE", destination: "DXB", baseDurationMinutes: 210, basePrice: 72000, airlineIds: ["ek", "pk", "er"] },
   { origin: "KHI", destination: "DXB", baseDurationMinutes: 165, basePrice: 68500, airlineIds: ["ek", "pk", "pa"] },
@@ -33,7 +33,31 @@ const routeSeeds: RouteSeed[] = [
   { origin: "LHE", destination: "ISB", baseDurationMinutes: 65, basePrice: 22000, airlineIds: ["pk", "er", "pa"] },
   { origin: "KHI", destination: "ISB", baseDurationMinutes: 110, basePrice: 28000, airlineIds: ["pk", "er", "pa"] },
   { origin: "KHI", destination: "LHE", baseDurationMinutes: 105, basePrice: 26000, airlineIds: ["pk", "er", "pa"] },
+  { origin: "ISB", destination: "KDU", baseDurationMinutes: 55, basePrice: 25000, airlineIds: ["pk", "er", "pa"] },
+  { origin: "KDU", destination: "ISB", baseDurationMinutes: 55, basePrice: 22000, airlineIds: ["pk", "er", "pa"] },
+  { origin: "ISB", destination: "GIL", baseDurationMinutes: 50, basePrice: 24000, airlineIds: ["pk", "er"] },
+  { origin: "GIL", destination: "ISB", baseDurationMinutes: 50, basePrice: 21500, airlineIds: ["pk", "er"] },
 ];
+
+function withReturnSeeds(seeds: RouteSeed[]): RouteSeed[] {
+  const existing = new Set(seeds.map((seed) => `${seed.origin}-${seed.destination}`));
+  const reverses: RouteSeed[] = [];
+  for (const seed of seeds) {
+    const key = `${seed.destination}-${seed.origin}`;
+    if (existing.has(key)) continue;
+    reverses.push({
+      origin: seed.destination,
+      destination: seed.origin,
+      baseDurationMinutes: seed.baseDurationMinutes,
+      basePrice: Math.round(seed.basePrice * 0.92),
+      airlineIds: seed.airlineIds,
+    });
+    existing.add(key);
+  }
+  return [...seeds, ...reverses];
+}
+
+const routeSeeds = withReturnSeeds(outboundRouteSeeds);
 
 const cabinMultipliers: Record<CabinClass, number> = {
   ECONOMY: 1,

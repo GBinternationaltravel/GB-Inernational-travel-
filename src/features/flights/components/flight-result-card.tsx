@@ -17,10 +17,14 @@ export function FlightResultCard({
   offer,
   onSelect,
   selecting = false,
+  selectLabel = "Select Flight",
+  priceMode = "trip",
 }: {
   offer: FlightOffer;
   onSelect: (offer: FlightOffer) => void;
   selecting?: boolean;
+  selectLabel?: string;
+  priceMode?: "trip" | "leg";
 }) {
   const first = offer.segments[0];
   const last = offer.segments[offer.segments.length - 1];
@@ -29,6 +33,7 @@ export function FlightResultCard({
   const airline = first.airline;
   const pricing = calculateOfferPriceSnapshot(offer);
   const ratePct = (pricing.markupRate * 100).toFixed(pricing.markupRate === 0.035 ? 1 : 0);
+  const displayTotal = priceMode === "leg" ? pricing.supplierFare : pricing.total;
 
   return (
     <article className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-elevated)] sm:p-5">
@@ -107,25 +112,33 @@ export function FlightResultCard({
                 {formatPrice(pricing.taxes, pricing.currency)}
               </dd>
             </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-[var(--color-muted)]">
-                GB service fee ({ratePct}%)
-              </dt>
-              <dd className="font-medium tabular-nums">
-                {formatPrice(pricing.fees, pricing.currency)}
-              </dd>
-            </div>
+            {priceMode === "trip" ? (
+              <div className="flex justify-between gap-4">
+                <dt className="text-[var(--color-muted)]">
+                  GB service fee ({ratePct}%)
+                </dt>
+                <dd className="font-medium tabular-nums">
+                  {formatPrice(pricing.fees, pricing.currency)}
+                </dd>
+              </div>
+            ) : (
+              <p className="text-xs text-[var(--color-muted)]">
+                GB service fee is applied once to the combined round-trip fare.
+              </p>
+            )}
             <div className="flex justify-between gap-4 border-t border-[var(--color-border)] pt-1.5">
-              <dt className="font-semibold text-[var(--color-navy)]">Total</dt>
+              <dt className="font-semibold text-[var(--color-navy)]">
+                {priceMode === "leg" ? "Supplier fare" : "Total"}
+              </dt>
               <dd className="font-bold tabular-nums text-[var(--color-navy)]">
-                {formatPrice(pricing.total, pricing.currency)}
+                {formatPrice(displayTotal, pricing.currency)}
               </dd>
             </div>
           </dl>
         </div>
         <div className="flex shrink-0 items-center justify-between gap-4 lg:flex-col lg:items-end">
           <p className="text-2xl font-bold tracking-tight text-[var(--color-emerald)] lg:text-3xl">
-            {formatPrice(pricing.total, pricing.currency)}
+            {formatPrice(displayTotal, pricing.currency)}
           </p>
           <Button
             size="lg"
@@ -133,7 +146,7 @@ export function FlightResultCard({
             onClick={() => onSelect(offer)}
             isLoading={selecting}
           >
-            Select Flight
+            {selectLabel}
           </Button>
         </div>
       </div>

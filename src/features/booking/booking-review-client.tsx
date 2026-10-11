@@ -102,9 +102,17 @@ export function BookingReviewClient() {
         supplierSessionRef: current.offer.supplierSessionRef ?? null,
         // Supplier fare only — markup is applied server-side after revalidation.
         expectedTotal:
+          current.offer.outboundSupplierFare ??
           current.offer.pricing.supplierFare ??
           current.subtotalAmount + current.taxesAmount,
         currency: current.currency,
+        departureDate: current.offer.departureAt.slice(0, 10),
+        returnInternalOfferId: current.offer.returnLeg?.internalOfferId,
+        returnSupplierOfferId: current.offer.returnLeg?.supplierOfferId,
+        returnSupplierCode: current.offer.returnLeg?.supplierCode,
+        returnSupplierSessionRef: current.offer.returnLeg?.supplierSessionRef,
+        returnExpectedTotal: current.offer.returnSupplierFare,
+        returnDepartureDate: current.offer.returnLeg?.departureAt.slice(0, 10),
       }),
     });
     const data = (await response.json()) as {
@@ -366,7 +374,9 @@ export function BookingReviewClient() {
         <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
           <div className="space-y-6">
             <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
-              <h2 className="font-display text-xl">Flight</h2>
+              <h2 className="font-display text-xl">
+                {offer.returnLeg ? "Outbound flight" : "Flight"}
+              </h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div>
                   <p className="text-sm text-[var(--color-muted)]">From</p>
@@ -397,6 +407,45 @@ export function BookingReviewClient() {
                 />
               </div>
             </section>
+
+            {offer.returnLeg ? (
+              <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
+                <h2 className="font-display text-xl">Return flight</h2>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-sm text-[var(--color-muted)]">From</p>
+                    <p className="font-medium">
+                      {offer.returnLeg.originCity} ({offer.returnLeg.origin})
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-[var(--color-muted)]">To</p>
+                    <p className="font-medium">
+                      {offer.returnLeg.destinationCity} ({offer.returnLeg.destination})
+                    </p>
+                  </div>
+                  <ReviewItem
+                    label="Return date"
+                    value={formatFlightDate(offer.returnLeg.departureAt)}
+                  />
+                  <ReviewItem
+                    label="Departure time"
+                    value={formatFlightTime(offer.returnLeg.departureAt)}
+                  />
+                  <ReviewItem
+                    label="Arrival time"
+                    value={formatFlightTime(offer.returnLeg.arrivalAt)}
+                  />
+                  <ReviewItem
+                    label="Duration"
+                    value={formatDuration(offer.returnLeg.durationMinutes)}
+                  />
+                  <ReviewItem label="Stops" value={stopsLabel(offer.returnLeg.stops)} />
+                  <ReviewItem label="Airline" value={offer.returnLeg.airlineName} />
+                  <ReviewItem label="Flight number" value={offer.returnLeg.flightNumber} />
+                </div>
+              </section>
+            ) : null}
 
             <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
               <h2 className="font-display text-xl">Passengers</h2>
@@ -433,6 +482,18 @@ export function BookingReviewClient() {
             <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
               <h2 className="font-display text-xl">Price breakdown</h2>
               <dl className="mt-4 space-y-3 text-sm">
+                {offer.outboundSupplierFare != null && offer.returnSupplierFare != null ? (
+                  <>
+                    <div className="flex justify-between gap-3">
+                      <dt>Outbound supplier fare</dt>
+                      <dd>{formatPrice(offer.outboundSupplierFare, booking.currency)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt>Return supplier fare</dt>
+                      <dd>{formatPrice(offer.returnSupplierFare, booking.currency)}</dd>
+                    </div>
+                  </>
+                ) : null}
                 <div className="flex justify-between gap-3">
                   <dt>Base fare</dt>
                   <dd>{formatPrice(booking.subtotalAmount, booking.currency)}</dd>

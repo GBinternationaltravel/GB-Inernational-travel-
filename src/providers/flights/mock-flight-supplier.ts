@@ -85,9 +85,16 @@ export class MockFlightSupplier implements FlightSupplier {
   async getOffer(input: {
     internalOfferId: string;
     supplierOfferId?: string;
+    departureDate?: string;
+    origin?: string;
+    destination?: string;
   }): Promise<FlightOffer | null> {
     return withSupplierLogging(this.code, "getOffer", async () => {
-      const offer = getMockOfferById(input.internalOfferId);
+      const offer = getMockOfferById(input.internalOfferId, {
+        departureDate: input.departureDate,
+        origin: input.origin,
+        destination: input.destination,
+      });
       if (!offer) return null;
       return normalizeMockOffer(offer);
     });
@@ -99,7 +106,9 @@ export class MockFlightSupplier implements FlightSupplier {
       "revalidateOffer",
       async () => {
         const env = getFlightSupplierEnv();
-        const offer = getMockOfferById(input.internalOfferId);
+        const offer = getMockOfferById(input.internalOfferId, {
+          departureDate: input.departureDate,
+        });
 
         if (!offer) {
           return {

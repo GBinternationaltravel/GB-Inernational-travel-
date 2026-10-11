@@ -21,7 +21,14 @@ import {
   formatFlightDate,
   sortOffers,
 } from "@/lib/flights/filter-sort";
-import { saveSelectedFlight } from "@/lib/flights/selection";
+import {
+  clearPendingOutbound,
+  readPendingOutbound,
+  savePendingOutbound,
+  saveSelectedFlight,
+} from "@/lib/flights/selection";
+import { cheapestOffer } from "@/lib/flights/round-trip";
+import { FlightFareBar } from "@/features/flights/components/flight-fare-bar";
 import type { SearchFormValues } from "@/lib/flights/search-params";
 import type { FlightFiltersState, FlightOffer, FlightSortOption } from "@/types/flight";
 import { cabinClasses } from "@/config/booking";
@@ -37,6 +44,7 @@ const sortOptions: Array<{ value: FlightSortOption; label: string }> = [
 export function FlightResultsExperience({
   search,
   initialOffers,
+  returnOffers = [],
   loadError = false,
   errorMessage,
   isMock = true,
@@ -45,6 +53,7 @@ export function FlightResultsExperience({
 }: {
   search: SearchFormValues;
   initialOffers: FlightOffer[];
+  returnOffers?: FlightOffer[];
   loadError?: boolean;
   errorMessage?: string | null;
   isMock?: boolean;
@@ -52,7 +61,9 @@ export function FlightResultsExperience({
   supplierEnvironment?: string | null;
 }) {
   const router = useRouter();
+  const isRoundTrip = search.tripType === "ROUND_TRIP";
   const [offers] = useState(initialOffers);
+  const [inboundOffers] = useState(returnOffers);
   const [filters, setFilters] = useState<FlightFiltersState>(defaultFlightFilters());
   const [sort, setSort] = useState<FlightSortOption>("recommended");
   const [modifyOpen, setModifyOpen] = useState(false);
@@ -60,6 +71,8 @@ export function FlightResultsExperience({
   const [sortOpen, setSortOpen] = useState(false);
   const [selectingId, setSelectingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeLeg, setActiveLeg] = useState<"outbound" | "return">("outbound");
+  const [outboundOffer, setOutboundOffer] = useState<FlightOffer | null>(null);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -67,12 +80,34 @@ export function FlightResultsExperience({
     return () => window.clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (!isRoundTrip) return;
+    const pending = readPendingOutbound();
+    if (
+      pending &&
+      pending.search.origin === search.origin &&
+      pending.search.destination === search.destination &&
+      pending.search.departureDate === search.departureDate &&
+      pending.search.tripType === "ROUND_TRIP"
+    ) {
+      setOutboundOffer(pending.offer);
+      setActiveLeg("return");
+    }
+  }, [
+    isRoundTrip,
+    search.origin,
+    search.destination,
+    search.departureDate,
+  ]);
+
   const origin = getAirportByCode(search.origin);
   const destination = getAirportByCode(search.destination);
+  const showingReturn = isRoundTrip && activeLeg === "return";
+  const listOffers = showingReturn ? inboundOffers : offers;
 
   const visibleOffers = useMemo(
-    () => sortOffers(filterOffers(offers, filters), sort),
-    [offers, filters, sort],
+    () => sortOffers(filterOffers(listOffers, filters), sort),
+    [listOffers, filters, sort],
   );
 
   const passengerLabel = buildPassengerLabel(search);
@@ -83,38 +118,89 @@ export function FlightResultsExperience({
     setFilters(defaultFlightFilters());
   }
 
+  const cheapestOutbound = useMemo(() => cheapestOffer(offers), [offers]);
+  const cheapestReturn = useMemo(() => cheapestOffer(inboundOffers), [inboundOffers]);
+
+  function searchContext() {
+    return {
+      tripType: search.tripType,
+      origin: search.origin,
+      destination: search.destination,
+      departureDate: search.departureDate,
+      returnDate: search.returnDate || undefined,
+      adults: search.adults,
+      children: search.children,
+      infants: search.infants,
+      cabinClass: search.cabinClass,
+    };
+  }
+
   function shiftDeparture(days: number) {
     if (!search.departureDate) return;
     const next = shiftDate(search.departureDate, days);
+    if (search.returnDate && next > search.returnDate) return;
     const params = new URLSearchParams(window.location.search);
     params.set("departure", next);
-    if (search.returnDate) {
-      const returnNext =
-        search.returnDate < next ? shiftDate(next, 2) : search.returnDate;
-      params.set("return", returnNext);
-    }
+    if (search.returnDate) params.set("return", search.returnDate);
+    clearPendingOutbound();
+    startTransition(() => {
+      router.push(`/flights/results?${params.toString()}`);
+    });
+  }
+
+  function shiftReturn(days: number) {
+    if (!search.returnDate) return;
+    const next = shiftDate(search.returnDate, days);
+    if (next < search.departureDate) return;
+    const params = new URLSearchParams(window.location.search);
+    params.set("departure", search.departureDate);
+    params.set("return", next);
     startTransition(() => {
       router.push(`/flights/results?${params.toString()}`);
     });
   }
 
   function onSelect(offer: FlightOffer) {
+    if (!isRoundTrip) {
+      setSelectingId(offer.id);
+      clearPendingOutbound();
+      saveSelectedFlight({
+        offer,
+        search: searchContext(),
+        selectedAt: new Date().toISOString(),
+      });
+      router.push("/booking/passengers");
+      return;
+    }
+
+    if (activeLeg === "outbound") {
+      setOutboundOffer(offer);
+      savePendingOutbound({
+        offer,
+        search: searchContext(),
+        selectedAt: new Date().toISOString(),
+      });
+      setActiveLeg("return");
+      setFilters(defaultFlightFilters());
+      setSelectingId(null);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    if (!outboundOffer) {
+      setOutboundOffer(offer);
+      setActiveLeg("return");
+      return;
+    }
+
     setSelectingId(offer.id);
     saveSelectedFlight({
-      offer,
-      search: {
-        tripType: search.tripType,
-        origin: search.origin,
-        destination: search.destination,
-        departureDate: search.departureDate,
-        returnDate: search.returnDate || undefined,
-        adults: search.adults,
-        children: search.children,
-        infants: search.infants,
-        cabinClass: search.cabinClass,
-      },
+      offer: outboundOffer,
+      returnOffer: offer,
+      search: searchContext(),
       selectedAt: new Date().toISOString(),
     });
+    clearPendingOutbound();
     router.push("/booking/passengers");
   }
 
@@ -146,13 +232,20 @@ export function FlightResultsExperience({
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
+              <p className="text-xs font-semibold tracking-wide text-[var(--color-muted)] uppercase">
+                {showingReturn ? "Return flight" : isRoundTrip ? "Outbound flight" : "Flight"}
+              </p>
               <p className="flex flex-wrap items-center gap-2 font-display text-xl text-[var(--color-ink)] sm:text-2xl">
                 <span>
-                  {origin?.city ?? search.origin} ({search.origin})
+                  {showingReturn
+                    ? `${destination?.city ?? search.destination} (${search.destination})`
+                    : `${origin?.city ?? search.origin} (${search.origin})`}
                 </span>
                 <ArrowRight className="h-4 w-4" />
                 <span>
-                  {destination?.city ?? search.destination} ({search.destination})
+                  {showingReturn
+                    ? `${origin?.city ?? search.origin} (${search.origin})`
+                    : `${destination?.city ?? search.destination} (${search.destination})`}
                 </span>
               </p>
               <p className="mt-1 text-sm text-[var(--color-muted)]">
@@ -168,26 +261,55 @@ export function FlightResultsExperience({
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                aria-label="Previous day"
-                onClick={() => shiftDeparture(-1)}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm">{formatFlightDate(search.departureDate)}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                aria-label="Next day"
-                onClick={() => shiftDeparture(1)}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Previous departure day"
+                  onClick={() => shiftDeparture(-1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm">
+                  Out {formatFlightDate(search.departureDate)}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Next departure day"
+                  onClick={() => shiftDeparture(1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              {search.returnDate ? (
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Previous return day"
+                    onClick={() => shiftReturn(-1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm">
+                    Ret {formatFlightDate(search.returnDate)}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Next return day"
+                    onClick={() => shiftReturn(1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : null}
             </div>
             <div className="flex gap-2 lg:hidden">
               <Button type="button" variant="outline" size="sm" onClick={() => setFiltersOpen(true)}>
@@ -208,7 +330,7 @@ export function FlightResultsExperience({
           <div className="sticky top-40 rounded-xl border border-[var(--color-border)] bg-white p-4">
             <FlightFiltersPanel
               filters={filters}
-              offers={offers}
+              offers={listOffers}
               onChange={setFilters}
               onClear={clearFilters}
             />
@@ -216,6 +338,57 @@ export function FlightResultsExperience({
         </aside>
 
         <div>
+          <div className="mb-4">
+            <FlightFareBar
+              outbound={{
+                date: search.departureDate,
+                origin: search.origin,
+                destination: search.destination,
+                fare: outboundOffer
+                  ? Math.round(outboundOffer.totalPrice)
+                  : cheapestOutbound
+                    ? Math.round(cheapestOutbound.totalPrice)
+                    : null,
+                selected: Boolean(outboundOffer),
+              }}
+              inbound={
+                isRoundTrip
+                  ? {
+                      date: search.returnDate,
+                      origin: search.destination,
+                      destination: search.origin,
+                      fare: cheapestReturn
+                        ? Math.round(cheapestReturn.totalPrice)
+                        : null,
+                    }
+                  : null
+              }
+              showReturn={isRoundTrip}
+              isMock={isMock}
+            />
+          </div>
+
+          {isRoundTrip && outboundOffer ? (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm">
+              <p>
+                Outbound selected: {outboundOffer.segments[0]?.flightNumber} {search.origin} →{" "}
+                {search.destination}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setOutboundOffer(null);
+                  setActiveLeg("outbound");
+                  clearPendingOutbound();
+                }}
+              >
+                Change outbound
+              </Button>
+            </div>
+          ) : null}
+
           <Alert variant="warning" className="mb-4">
             {isMock
               ? "Showing mock development inventory only. These are not live airline fares or seats."
@@ -227,7 +400,7 @@ export function FlightResultsExperience({
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-[var(--color-muted)]">
               <span className="font-medium text-[var(--color-ink)]">{visibleOffers.length}</span>{" "}
-              flights found
+              {showingReturn ? "return flights found" : "flights found"}
               {!isMock && visibleOffers.length === 0
                 ? " — no availability for this search right now"
                 : ""}
@@ -275,10 +448,18 @@ export function FlightResultsExperience({
             <div className="space-y-4">
               {visibleOffers.map((offer) => (
                 <FlightResultCard
-                  key={offer.id}
+                  key={`${showingReturn ? "return" : "outbound"}-${offer.id}`}
                   offer={offer}
                   onSelect={onSelect}
                   selecting={selectingId === offer.id}
+                  selectLabel={
+                    showingReturn
+                      ? "Select return flight"
+                      : isRoundTrip
+                        ? "Select outbound flight"
+                        : "Select Flight"
+                  }
+                  priceMode={isRoundTrip ? "leg" : "trip"}
                 />
               ))}
             </div>
@@ -302,7 +483,7 @@ export function FlightResultsExperience({
       <Drawer open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filters">
         <FlightFiltersPanel
           filters={filters}
-          offers={offers}
+          offers={listOffers}
           onChange={setFilters}
           onClear={() => {
             clearFilters();

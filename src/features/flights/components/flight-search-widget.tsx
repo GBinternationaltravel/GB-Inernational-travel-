@@ -20,6 +20,8 @@ import {
   flightSearchSchema,
   getFlightSearchFieldErrors,
 } from "@/lib/validations/flight";
+import { summarizeRoundTripFares } from "@/lib/flights/round-trip";
+import { FlightFareBar } from "@/features/flights/components/flight-fare-bar";
 
 const tripTabs = tripTypes.map((item) => ({
   id: item.value,
@@ -82,6 +84,28 @@ export function FlightSearchWidget({
     router.push(buildResultsHref(values));
     onSearchComplete?.();
   }
+
+  const fareSummary = useMemo(() => {
+    if (!values.origin || !values.destination || !values.departureDate) return null;
+    if (values.origin.length !== 3 || values.destination.length !== 3) return null;
+    if (values.origin === values.destination) return null;
+    if (values.tripType === "MULTI_CITY") return null;
+    if (values.tripType === "ROUND_TRIP" && !values.returnDate) return null;
+    if (values.tripType === "ROUND_TRIP" && values.returnDate < values.departureDate) {
+      return null;
+    }
+    return summarizeRoundTripFares({
+      tripType: values.tripType,
+      origin: values.origin,
+      destination: values.destination,
+      departureDate: values.departureDate,
+      returnDate: values.returnDate || undefined,
+      cabinClass: values.cabinClass,
+      adults: values.adults,
+      children: values.children,
+      infants: values.infants,
+    });
+  }, [values]);
 
   return (
     <div
@@ -192,6 +216,31 @@ export function FlightSearchWidget({
             <Alert variant="warning">
               Multi-city search UI is prepared. Full multi-city routing will be implemented later.
             </Alert>
+          </div>
+        ) : null}
+
+        {fareSummary ? (
+          <div className="md:col-span-2 xl:col-span-6">
+            <FlightFareBar
+              outbound={{
+                date: fareSummary.departureDate,
+                origin: fareSummary.origin,
+                destination: fareSummary.destination,
+                fare: fareSummary.outbound?.supplierFare ?? null,
+              }}
+              inbound={
+                fareSummary.inbound
+                  ? {
+                      date: fareSummary.inbound.date,
+                      origin: fareSummary.inbound.origin,
+                      destination: fareSummary.inbound.destination,
+                      fare: fareSummary.inbound.supplierFare,
+                    }
+                  : null
+              }
+              currency={fareSummary.currency}
+              showReturn={values.tripType === "ROUND_TRIP"}
+            />
           </div>
         ) : null}
 

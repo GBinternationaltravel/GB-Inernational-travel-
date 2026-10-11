@@ -48,9 +48,21 @@ export async function searchFlights(
   }
 }
 
-export async function getFlightOfferById(id: string): Promise<FlightOffer | null> {
+export async function getFlightOfferById(
+  id: string,
+  context?: {
+    departureDate?: string;
+    origin?: string;
+    destination?: string;
+  },
+): Promise<FlightOffer | null> {
   const supplier = getFlightSupplier();
-  return supplier.getOffer({ internalOfferId: id });
+  return supplier.getOffer({
+    internalOfferId: id,
+    departureDate: context?.departureDate,
+    origin: context?.origin,
+    destination: context?.destination,
+  });
 }
 
 export async function revalidateFlightOffer(

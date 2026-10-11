@@ -16,7 +16,11 @@ import {
   type PassengerInput,
 } from "@/lib/validations/booking";
 import { formatPrice } from "@/lib/flights/filter-sort";
-import { calculateMockPriceSnapshot } from "@/lib/booking/pricing";
+import {
+  calculateCombinedOfferPriceSnapshot,
+  calculateMockPriceSnapshot,
+} from "@/lib/booking/pricing";
+import { FlightFareBar } from "@/features/flights/components/flight-fare-bar";
 
 type PassengerFormValue = {
   type: "ADULT" | "CHILD" | "INFANT";
@@ -71,8 +75,11 @@ export function PassengerDetailsForm({
   const [submitting, setSubmitting] = useState(false);
 
   const estimate = useMemo(
-    () => calculateMockPriceSnapshot(selection.offer),
-    [selection.offer],
+    () =>
+      selection.returnOffer
+        ? calculateCombinedOfferPriceSnapshot([selection.offer, selection.returnOffer])
+        : calculateMockPriceSnapshot(selection.offer),
+    [selection.offer, selection.returnOffer],
   );
 
   const countryOptions = countries.map((country) => ({
@@ -117,6 +124,7 @@ export function PassengerDetailsForm({
 
     const payload = {
       offerId: selection.offer.id,
+      returnOfferId: selection.returnOffer?.id,
       tripType: selection.search.tripType,
       origin: selection.search.origin,
       destination: selection.search.destination,
@@ -195,6 +203,29 @@ export function PassengerDetailsForm({
   return (
     <form ref={formRef} onSubmit={onSubmit} className="space-y-8" noValidate>
       {formError ? <Alert variant="error">{formError}</Alert> : null}
+
+      <FlightFareBar
+        outbound={{
+          date: selection.search.departureDate,
+          origin: selection.search.origin,
+          destination: selection.search.destination,
+          fare: Math.round(selection.offer.totalPrice),
+          selected: true,
+        }}
+        inbound={
+          selection.returnOffer
+            ? {
+                date: selection.search.returnDate ?? "",
+                origin: selection.search.destination,
+                destination: selection.search.origin,
+                fare: Math.round(selection.returnOffer.totalPrice),
+                selected: true,
+              }
+            : null
+        }
+        showReturn={selection.search.tripType === "ROUND_TRIP"}
+        isMock={selection.offer.isMock || Boolean(selection.returnOffer?.isMock)}
+      />
 
       <Alert variant="info">
         Passenger details are stored securely for this booking draft. Passport numbers are never

@@ -55,6 +55,7 @@ export default async function FlightResultsPage({
   }
 
   let offers: Awaited<ReturnType<typeof searchFlights>>["offers"] = [];
+  let returnOffers: Awaited<ReturnType<typeof searchFlights>>["offers"] = [];
   let loadError = false;
   let errorMessage: string | null = null;
   let isMock = true;
@@ -65,6 +66,19 @@ export default async function FlightResultsPage({
     offers = result.offers;
     isMock = result.isMock;
     supplierCode = result.supplierCode;
+
+    if (parsed.data.tripType === "ROUND_TRIP" && parsed.data.returnDate) {
+      const inbound = await searchFlights({
+        ...parsed.data,
+        tripType: "ONE_WAY",
+        origin: parsed.data.destination,
+        destination: parsed.data.origin,
+        departureDate: parsed.data.returnDate,
+        returnDate: undefined,
+      });
+      returnOffers = inbound.offers;
+      isMock = isMock || inbound.isMock;
+    }
   } catch (error) {
     loadError = true;
     errorMessage = toCustomerSupplierMessage(error);
@@ -79,6 +93,7 @@ export default async function FlightResultsPage({
       <FlightResultsExperience
         search={parsed.form}
         initialOffers={offers}
+        returnOffers={returnOffers}
         loadError={loadError}
         errorMessage={errorMessage}
         isMock={isMock}

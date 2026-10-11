@@ -4,6 +4,7 @@ import { rateLimit } from "@/lib/security/rate-limit";
 import { revalidateFlightOffer, toCustomerSupplierMessage } from "@/services/flight-service";
 import {
   calculateAgencyMarkup,
+  calculateCombinedOfferPriceSnapshot,
   calculateOfferPriceSnapshot,
 } from "@/lib/booking/pricing";
 
@@ -15,6 +16,13 @@ const bodySchema = z.object({
   /** Supplier fare before agency markup (not customer total). */
   expectedTotal: z.number().positive().optional(),
   currency: z.string().optional(),
+  departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  returnInternalOfferId: z.string().min(3).optional(),
+  returnSupplierOfferId: z.string().min(1).optional(),
+  returnSupplierCode: z.string().min(1).optional(),
+  returnSupplierSessionRef: z.string().optional().nullable(),
+  returnExpectedTotal: z.number().positive().optional(),
+  returnDepartureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 /**
@@ -42,22 +50,79 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await revalidateFlightOffer(parsed.data);
-    const customerPrevious =
-      typeof result.previousTotal === "number"
-        ? calculateAgencyMarkup(result.previousTotal).customerTotal
-        : undefined;
-    const customerCurrent = result.offer
-      ? calculateOfferPriceSnapshot(result.offer).total
-      : typeof result.currentTotal === "number"
-        ? calculateAgencyMarkup(result.currentTotal).customerTotal
-        : undefined;
+    const outbound = await revalidateFlightOffer({
+      internalOfferId: parsed.data.internalOfferId,
+      supplierOfferId: parsed.data.supplierOfferId,
+      supplierCode: parsed.data.supplierCode,
+      supplierSessionRef: parsed.data.supplierSessionRef,
+      expectedTotal: parsed.data.expectedTotal,
+      currency: parsed.data.currency,
+      departureDate: parsed.data.departureDate,
+    });
+
+    if (!parsed.data.returnInternalOfferId) {
+      const customerPrevious =
+        typeof outbound.previousTotal === "number"
+          ? calculateAgencyMarkup(outbound.previousTotal).customerTotal
+          : undefined;
+      const customerCurrent = outbound.offer
+        ? calculateOfferPriceSnapshot(outbound.offer).total
+        : typeof outbound.currentTotal === "number"
+          ? calculateAgencyMarkup(outbound.currentTotal).customerTotal
+          : undefined;
+
+      return NextResponse.json({
+        ...outbound,
+        supplierPreviousTotal: outbound.previousTotal,
+        supplierCurrentTotal: outbound.currentTotal,
+        previousTotal: customerPrevious,
+        currentTotal: customerCurrent,
+      });
+    }
+
+    const inbound = await revalidateFlightOffer({
+      internalOfferId: parsed.data.returnInternalOfferId,
+      supplierOfferId: parsed.data.returnSupplierOfferId ?? parsed.data.returnInternalOfferId,
+      supplierCode: parsed.data.returnSupplierCode ?? parsed.data.supplierCode,
+      supplierSessionRef: parsed.data.returnSupplierSessionRef,
+      expectedTotal: parsed.data.returnExpectedTotal,
+      currency: parsed.data.currency,
+      departureDate: parsed.data.returnDepartureDate,
+    });
+
+    const blocked = [outbound, inbound].find(
+      (result) => result.status === "EXPIRED" || result.status === "NO_AVAILABILITY",
+    );
+    if (blocked) {
+      return NextResponse.json({
+        ...blocked,
+        previousTotal: undefined,
+        currentTotal: undefined,
+      });
+    }
+
+    const supplierPrevious =
+      (outbound.previousTotal ?? 0) + (inbound.previousTotal ?? 0);
+    const supplierCurrent =
+      outbound.offer && inbound.offer
+        ? Math.round(outbound.offer.totalPrice) + Math.round(inbound.offer.totalPrice)
+        : (outbound.currentTotal ?? 0) + (inbound.currentTotal ?? 0);
+    const customerPrevious = calculateAgencyMarkup(supplierPrevious).customerTotal;
+    const customerCurrent =
+      outbound.offer && inbound.offer
+        ? calculateCombinedOfferPriceSnapshot([outbound.offer, inbound.offer]).total
+        : calculateAgencyMarkup(supplierCurrent).customerTotal;
+    const changed =
+      outbound.status === "PRICE_CHANGED" || inbound.status === "PRICE_CHANGED";
 
     return NextResponse.json({
-      ...result,
-      /** Supplier fare before markup (for diagnostics only). */
-      supplierPreviousTotal: result.previousTotal,
-      supplierCurrentTotal: result.currentTotal,
+      ok: !changed && outbound.ok && inbound.ok,
+      status: changed ? "PRICE_CHANGED" : outbound.status,
+      offer: outbound.offer,
+      message: outbound.message,
+      isMock: outbound.isMock || inbound.isMock,
+      supplierPreviousTotal: supplierPrevious,
+      supplierCurrentTotal: supplierCurrent,
       previousTotal: customerPrevious,
       currentTotal: customerCurrent,
     });

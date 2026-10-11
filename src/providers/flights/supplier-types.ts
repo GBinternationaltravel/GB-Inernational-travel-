@@ -43,6 +43,7 @@ export type RevalidateOfferInput = {
   supplierSessionRef?: string | null;
   expectedTotal?: number;
   currency?: string;
+  departureDate?: string;
 };
 
 export type RevalidateOfferResult = {
@@ -168,6 +169,9 @@ export interface FlightSupplier {
   getOffer(input: {
     internalOfferId: string;
     supplierOfferId?: string;
+    departureDate?: string;
+    origin?: string;
+    destination?: string;
   }): Promise<FlightOffer | null>;
 
   revalidateOffer(input: RevalidateOfferInput): Promise<RevalidateOfferResult>;

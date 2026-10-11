@@ -142,6 +142,7 @@ export const bookingPassengerSchema = passengerSchema;
 export const bookingDraftSchema = z
   .object({
     offerId: z.string().trim().min(1, "Selected flight is required"),
+    returnOfferId: z.string().trim().min(1).optional(),
     tripType: z.enum(["ONE_WAY", "ROUND_TRIP", "MULTI_CITY"]),
     origin: z.string().trim().length(3),
     destination: z.string().trim().length(3),
@@ -208,6 +209,23 @@ export const bookingDraftSchema = z
         message: "At least one adult is required",
         path: ["passengers"],
       });
+    }
+
+    if (data.tripType === "ROUND_TRIP") {
+      if (!data.returnDate) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Return date is required for round trips",
+          path: ["returnDate"],
+        });
+      }
+      if (!data.returnOfferId) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Please select a return flight",
+          path: ["returnOfferId"],
+        });
+      }
     }
   });
 

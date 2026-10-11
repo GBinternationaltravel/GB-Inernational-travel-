@@ -132,6 +132,23 @@ export function BookingPaymentClient() {
               {formatPrice(booking.totalAmount, booking.currency)}
             </p>
             <dl className="mt-3 space-y-1 text-sm text-[var(--color-muted)]">
+              {booking.offer.outboundSupplierFare != null &&
+              booking.offer.returnSupplierFare != null ? (
+                <>
+                  <div className="flex justify-between gap-3">
+                    <dt>Outbound supplier fare</dt>
+                    <dd>
+                      {formatPrice(booking.offer.outboundSupplierFare, booking.currency)}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt>Return supplier fare</dt>
+                    <dd>
+                      {formatPrice(booking.offer.returnSupplierFare, booking.currency)}
+                    </dd>
+                  </div>
+                </>
+              ) : null}
               <div className="flex justify-between gap-3">
                 <dt>Base fare</dt>
                 <dd>{formatPrice(booking.subtotalAmount, booking.currency)}</dd>

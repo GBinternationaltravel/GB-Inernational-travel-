@@ -26,12 +26,15 @@ export function PassengerDetailsClient() {
     return <LoadingState label="Loading passenger form…" />;
   }
 
-  if (!selection) {
+  if (
+    !selection ||
+    (selection.search.tripType === "ROUND_TRIP" && !selection.returnOffer)
+  ) {
     return (
       <Section>
         <EmptyState
           title="Your selected flight is no longer available in this browser session."
-          description="Please search again and select a flight to continue."
+          description="Please search again and select your outbound and return flights to continue."
           action={
             <Link
               href="/flights"
