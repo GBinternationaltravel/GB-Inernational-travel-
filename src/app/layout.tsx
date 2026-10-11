@@ -20,7 +20,7 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-brand",
   display: "swap",
-  weight: ["600", "700"],
+  weight: ["600", "700", "800"],
 });
 
 export const metadata: Metadata = buildMetadata({

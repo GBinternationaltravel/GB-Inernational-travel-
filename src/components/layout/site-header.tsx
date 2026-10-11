@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Menu, Plane, X } from "lucide-react";
-import { navigation, siteConfig } from "@/config/site";
+import { navigation } from "@/config/site";
 import { Container } from "@/components/ui/container";
 import { cn } from "@/lib/utils";
 
@@ -42,10 +42,7 @@ export function SiteHeader() {
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-emerald)]">
             <Plane className="h-4.5 w-4.5 text-white" aria-hidden />
           </span>
-          <span className="site-brand">
-            <span className="site-brand-gb">GB</span>
-            <span className="site-brand-rest">{siteConfig.name.slice(2)}</span>
-          </span>
+          <span className="site-brand">GB International Travels</span>
         </Link>
 
         <nav className="hidden items-center gap-5 xl:flex" aria-label="Primary">
