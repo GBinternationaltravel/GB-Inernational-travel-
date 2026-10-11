@@ -18,7 +18,10 @@ export function adminCmsErrorResponse(error: unknown, fallback: string) {
           : error.code === "STORE"
             ? 503
             : 400;
-    return NextResponse.json({ error: error.message, code: error.code }, { status });
+    return NextResponse.json(
+      { error: error.message, code: error.code, fields: error.fields },
+      { status },
+    );
   }
   console.error("[admin-cms]", error);
   return NextResponse.json({ error: fallback }, { status: 500 });

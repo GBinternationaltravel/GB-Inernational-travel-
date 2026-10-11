@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { requireAdminPage } from "@/lib/auth/admin";
+import { hasPermission } from "@/lib/auth/permissions";
 import { listAdminBookings } from "@/services/admin-booking-service";
 import { adminBookingStatuses, adminPaymentStatuses } from "@/config/admin";
 import { AdminStoreBanner } from "@/features/admin/admin-ui";
@@ -47,11 +49,21 @@ export default async function AdminBookingsPage({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="font-display text-3xl">Bookings</h1>
-        <p className="text-sm text-[var(--color-muted)]">
-          Server-side search, filters, and pagination.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl">Bookings</h1>
+          <p className="text-sm text-[var(--color-muted)]">
+            Server-side search, filters, and pagination.
+          </p>
+        </div>
+        {hasPermission(admin.role, "bookings.create") ? (
+          <Link
+            href="/admin/bookings/new"
+            className="inline-flex h-10 items-center rounded-md bg-[var(--color-brand)] px-4 text-sm font-medium text-white"
+          >
+            Create booking
+          </Link>
+        ) : null}
       </div>
       <AdminStoreBanner developmentDataStore={data.developmentDataStore} />
 

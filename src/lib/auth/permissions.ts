@@ -8,6 +8,7 @@ export type AdminPermission =
   | "admin.access"
   | "cms.manage"
   | "bookings.view"
+  | "bookings.create"
   | "bookings.status"
   | "tickets.issue"
   | "payments.view"
@@ -25,6 +26,7 @@ const ALL_PERMISSIONS: AdminPermission[] = [
   "admin.access",
   "cms.manage",
   "bookings.view",
+  "bookings.create",
   "bookings.status",
   "tickets.issue",
   "payments.view",
@@ -53,6 +55,7 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly AdminPermission[]> = {
     "admin.access",
     "cms.manage",
     "bookings.view",
+    "bookings.create",
     "bookings.status",
     "reports.view",
     "reports.revenue",
@@ -75,13 +78,14 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly AdminPermission[]> = {
     "admin.access",
     "cms.manage",
     "bookings.view",
+    "bookings.create",
     "bookings.status",
     "reports.view",
     "customers.manage",
     "audit.view",
     "flights.manage",
   ],
-  STAFF: ["admin.access", "bookings.view", "tickets.issue", "bookings.status"],
+  STAFF: ["admin.access", "bookings.view", "bookings.create", "tickets.issue", "bookings.status"],
   AGENT: ["admin.access", "bookings.view", "customers.manage"],
 };
 
