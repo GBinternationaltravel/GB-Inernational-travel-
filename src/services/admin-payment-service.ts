@@ -1,11 +1,30 @@
+import { Prisma, type UserRole } from "@prisma/client";
 import { ADMIN_PAGE_SIZE } from "@/config/admin";
 import { isProductionAdminStoreRequired } from "@/lib/auth/admin";
 import { getBookingRepository } from "@/lib/booking/get-repository";
-import { assertBookingTransition } from "@/lib/booking/status-transitions";
+import {
+  assertBookingTransition,
+  bookingStepsToTicketingPending,
+  canReachTicketingPendingFrom,
+} from "@/lib/booking/status-transitions";
+import { prisma } from "@/lib/db";
 import { getPaymentRepository } from "@/lib/payment/get-repository";
 import { getUserRepository } from "@/lib/auth/get-user-repository";
 import { writeAuditLog } from "@/lib/security/audit";
 import { AdminServiceError } from "@/services/admin-booking-service";
+import type { BookingRepository } from "@/lib/booking/repository";
+import type { PaymentRepository, StoredPayment } from "@/lib/payment/repository";
+import {
+  bookingStepsAfterFullOfflinePayment,
+  canRecordOfflineAgainstStatus,
+  canRecordOfflinePaymentRole,
+  hasOpenCheckoutPayment,
+  isOfflinePaymentMethod,
+  offlinePaymentIdempotencyKey,
+  outstandingBalance,
+  roundPkrAmount,
+  toPrismaPaymentMethod,
+} from "@/lib/payment/offline";
 
 export type AdminPaymentListItem = {
   id: string;
@@ -190,15 +209,29 @@ export async function getAdminPaymentDetail(actorId: string, id: string) {
   };
 }
 
-export async function verifyAdminPayment(input: {
-  actorId: string;
-  paymentId: string;
-  providerRef: string;
-  note?: string;
-}) {
-  const paymentStore = await getPaymentRepository();
-  const bookingStore = await getBookingRepository();
-  if (isProductionAdminStoreRequired(paymentStore.kind)) {
+export type OfflinePaymentDeps = {
+  bookingRepo: BookingRepository;
+  paymentRepo: PaymentRepository;
+  writeAudit: typeof writeAuditLog;
+};
+
+export async function verifyAdminPayment(
+  input: {
+    actorId: string;
+    paymentId: string;
+    providerRef: string;
+    note?: string;
+  },
+  deps?: OfflinePaymentDeps,
+) {
+  const paymentStore = deps
+    ? { repo: deps.paymentRepo, kind: "file" as const }
+    : await getPaymentRepository();
+  const bookingStore = deps
+    ? { repo: deps.bookingRepo, kind: "file" as const }
+    : await getBookingRepository();
+  const writeAudit = deps?.writeAudit ?? writeAuditLog;
+  if (!deps && isProductionAdminStoreRequired(paymentStore.kind)) {
     throw new AdminServiceError("Production admin requires PostgreSQL.", "STORE");
   }
 
@@ -210,6 +243,33 @@ export async function verifyAdminPayment(input: {
 
   const booking = await bookingStore.repo.findById(payment.bookingId);
   if (!booking) throw new AdminServiceError("Booking not found.", "NOT_FOUND");
+
+  if (!canReachTicketingPendingFrom(booking.status)) {
+    throw new AdminServiceError(
+      `Cannot verify payment while the booking is ${booking.status}.`,
+      "INVALID_TRANSITION",
+    );
+  }
+
+  const statusSteps = bookingStepsToTicketingPending(booking.status);
+  let nextStatus = booking.status;
+  for (const next of statusSteps) {
+    try {
+      assertBookingTransition(nextStatus, next);
+    } catch (error) {
+      throw new AdminServiceError(
+        error instanceof Error ? error.message : "Invalid booking status transition.",
+        "INVALID_TRANSITION",
+      );
+    }
+    nextStatus = next;
+  }
+  if (nextStatus === "CONFIRMED") {
+    throw new AdminServiceError(
+      "CONFIRMED requires authoritative supplier ticketing confirmation.",
+      "INVALID_TRANSITION",
+    );
+  }
 
   const providerRef = input.providerRef.trim();
   if (providerRef.length < 4) {
@@ -229,15 +289,17 @@ export async function verifyAdminPayment(input: {
     },
   });
 
-  if (
-    booking.status === "PENDING_PAYMENT" ||
-    booking.status === "PAYMENT_PROCESSING" ||
-    booking.status === "PAYMENT_RECEIVED"
-  ) {
-    await bookingStore.repo.updateStatus(booking.id, "TICKETING_PENDING");
+  let bookingStatus = booking.status;
+  for (const next of statusSteps) {
+    assertBookingTransition(bookingStatus, next);
+    const updated = await bookingStore.repo.updateStatus(booking.id, next);
+    if (!updated) {
+      throw new AdminServiceError("Could not update booking status.", "VALIDATION");
+    }
+    bookingStatus = updated.status;
   }
 
-  await writeAuditLog({
+  await writeAudit({
     userId: input.actorId,
     action: "PAYMENT_VERIFIED",
     entityType: "Payment",
@@ -380,9 +442,252 @@ export async function listAdminPassengers(
   };
 }
 
+export type RecordOfflinePaymentInput = {
+  actorId: string;
+  actorRole: UserRole;
+  bookingReference: string;
+  method: string;
+  amountReceived: number;
+  receiptReference: string;
+  note?: string;
+};
+
+export async function recordOfflineAdminPayment(
+  input: RecordOfflinePaymentInput,
+  deps?: OfflinePaymentDeps,
+) {
+  if (!canRecordOfflinePaymentRole(input.actorRole)) {
+    throw new AdminServiceError("Admin access required.", "FORBIDDEN_ACTION");
+  }
+  if (!isOfflinePaymentMethod(input.method)) {
+    throw new AdminServiceError("Unsupported offline payment method.", "VALIDATION");
+  }
+
+  const receiptReference = input.receiptReference.trim();
+  if (receiptReference.length < 4 || receiptReference.length > 120) {
+    throw new AdminServiceError(
+      "A bank transaction or receipt reference of 4–120 characters is required.",
+      "VALIDATION",
+    );
+  }
+
+  const bookingStore = deps
+    ? { repo: deps.bookingRepo, kind: "file" as const }
+    : await getBookingRepository();
+  const paymentStore = deps
+    ? { repo: deps.paymentRepo, kind: "file" as const }
+    : await getPaymentRepository();
+  const writeAudit = deps?.writeAudit ?? writeAuditLog;
+
+  if (!deps && isProductionAdminStoreRequired(paymentStore.kind)) {
+    throw new AdminServiceError("Production admin requires PostgreSQL.", "STORE");
+  }
+
+  const booking = await bookingStore.repo.findByReference(input.bookingReference.trim());
+  if (!booking) {
+    throw new AdminServiceError("Booking not found.", "NOT_FOUND");
+  }
+
+  if (!canRecordOfflineAgainstStatus(booking.status)) {
+    throw new AdminServiceError(
+      `Offline payment cannot be recorded while the booking is ${booking.status}.`,
+      "INVALID_TRANSITION",
+    );
+  }
+
+  const allPayments = (await paymentStore.repo.listAll()).filter(
+    (payment) => payment.bookingId === booking.id,
+  );
+
+  if (hasOpenCheckoutPayment(allPayments)) {
+    throw new AdminServiceError(
+      "An open checkout payment already exists. Verify that payment instead of recording a new offline payment.",
+      "VALIDATION",
+    );
+  }
+
+  const expectedTotal = roundPkrAmount(booking.totalAmount);
+  const outstanding = outstandingBalance(expectedTotal, allPayments);
+  const idempotencyKey = offlinePaymentIdempotencyKey(booking.id);
+  const existingByKey = await paymentStore.repo.findByIdempotencyKey(idempotencyKey);
+  if (existingByKey) {
+    throw new AdminServiceError(
+      "An offline payment has already been recorded for this booking.",
+      "VALIDATION",
+    );
+  }
+  if (outstanding <= 0) {
+    throw new AdminServiceError("This booking is already fully paid.", "VALIDATION");
+  }
+
+  if (!Number.isFinite(input.amountReceived)) {
+    throw new AdminServiceError("Enter a valid amount received.", "VALIDATION");
+  }
+  const amountReceived = roundPkrAmount(input.amountReceived);
+  if (amountReceived <= 0) {
+    throw new AdminServiceError("Amount received must be greater than zero.", "VALIDATION");
+  }
+  if (amountReceived < outstanding) {
+    throw new AdminServiceError(
+      "Amount received is less than the outstanding balance. Partial payments are not supported.",
+      "VALIDATION",
+    );
+  }
+  if (amountReceived > outstanding) {
+    throw new AdminServiceError(
+      "Amount received is greater than the outstanding balance.",
+      "VALIDATION",
+    );
+  }
+
+  const methodMap = toPrismaPaymentMethod(input.method);
+
+  const paidAt = new Date().toISOString();
+  const metadata = {
+    channel: "offline",
+    offlineMethod: methodMap.offlineMethod,
+    recordedBy: input.actorId,
+    adminNote: input.note?.trim() || null,
+    expectedTotal,
+    outstandingAtRecord: outstanding,
+  };
+
+  let payment: StoredPayment;
+  let bookingStatus = booking.status;
+
+  const usePrismaTransaction =
+    !deps && bookingStore.kind === "prisma" && paymentStore.kind === "prisma";
+
+  if (usePrismaTransaction) {
+    try {
+      const persisted = await prisma.$transaction(async (tx) => {
+        const created = await tx.payment.create({
+          data: {
+            bookingId: booking.id,
+            amount: amountReceived,
+            currency: booking.currency,
+            status: "PAID",
+            method: methodMap.method,
+            provider: "OFFLINE",
+            providerRef: receiptReference,
+            paidAt: new Date(paidAt),
+            isMock: false,
+            idempotencyKey,
+            metadata,
+          },
+        });
+        let status = booking.status;
+        for (const next of bookingStepsAfterFullOfflinePayment(booking.status)) {
+          assertBookingTransition(status, next);
+          await tx.booking.update({
+            where: { id: booking.id },
+            data: { status: next },
+          });
+          status = next;
+        }
+        return { created, status };
+      });
+      payment = {
+        id: persisted.created.id,
+        bookingId: persisted.created.bookingId,
+        amount: amountReceived,
+        currency: persisted.created.currency,
+        status: persisted.created.status,
+        method: persisted.created.method,
+        provider: persisted.created.provider,
+        providerRef: persisted.created.providerRef,
+        idempotencyKey: persisted.created.idempotencyKey,
+        isMock: persisted.created.isMock,
+        last4: persisted.created.last4,
+        paidAt: persisted.created.paidAt?.toISOString() ?? paidAt,
+        failureReason: persisted.created.failureReason,
+        metadata,
+        createdAt: persisted.created.createdAt.toISOString(),
+        updatedAt: persisted.created.updatedAt.toISOString(),
+        attempts: [],
+        events: [],
+      };
+      bookingStatus = persisted.status;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new AdminServiceError(
+          "An offline payment has already been recorded for this booking.",
+          "VALIDATION",
+        );
+      }
+      throw error;
+    }
+  } else {
+    try {
+      payment = await paymentStore.repo.createPayment({
+        bookingId: booking.id,
+        amount: amountReceived,
+        currency: booking.currency,
+        provider: "OFFLINE",
+        isMock: false,
+        idempotencyKey,
+        method: methodMap.method,
+        status: "PAID",
+        providerRef: receiptReference,
+        paidAt,
+        metadata,
+      });
+    } catch (error) {
+      const raced = await paymentStore.repo.findByIdempotencyKey(idempotencyKey);
+      const conflict =
+        Boolean(raced) ||
+        (error instanceof Error && error.message === "PAYMENT_IDEMPOTENCY_CONFLICT");
+      if (conflict) {
+        throw new AdminServiceError(
+          "An offline payment has already been recorded for this booking.",
+          "VALIDATION",
+        );
+      }
+      throw error;
+    }
+
+    for (const next of bookingStepsAfterFullOfflinePayment(booking.status)) {
+      assertBookingTransition(bookingStatus, next);
+      const updated = await bookingStore.repo.updateStatus(booking.id, next);
+      if (!updated) {
+        throw new AdminServiceError("Could not update booking status.", "VALIDATION");
+      }
+      bookingStatus = updated.status;
+    }
+  }
+
+  await writeAudit({
+    userId: input.actorId,
+    action: "OFFLINE_PAYMENT_RECORDED",
+    entityType: "Payment",
+    entityId: payment.id,
+    metadata: {
+      bookingReference: booking.reference,
+      method: methodMap.offlineMethod,
+      storedMethod: methodMap.method,
+      providerRef: receiptReference,
+      amount: amountReceived,
+      currency: booking.currency,
+      bookingStatus,
+    },
+  });
+
+  return {
+    id: payment.id,
+    status: payment.status,
+    bookingReference: booking.reference,
+    bookingStatus,
+    amount: amountReceived,
+    currency: booking.currency,
+    method: methodMap.offlineMethod,
+    providerRef: receiptReference,
+  };
+}
+
 export const AdminPaymentService = {
   list: listAdminPayments,
   get: getAdminPaymentDetail,
   verify: verifyAdminPayment,
   refund: recordAdminPaymentRefund,
+  recordOffline: recordOfflineAdminPayment,
 };

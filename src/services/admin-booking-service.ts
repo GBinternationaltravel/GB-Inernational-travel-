@@ -16,6 +16,12 @@ import { isProductionAdminStoreRequired } from "@/lib/auth/admin";
 import { getSupplierTicketingService } from "@/services/supplier-ticketing-service";
 import { dispatchTravelNotification } from "@/services/notification-service";
 import { snapshotFlightNumber } from "@/lib/flights/flight-number";
+import {
+  canRecordOfflineAgainstStatus,
+  hasOpenCheckoutPayment,
+  outstandingBalance,
+  sumCountedPayments,
+} from "@/lib/payment/offline";
 
 export class AdminServiceError extends Error {
   constructor(
@@ -26,6 +32,7 @@ export class AdminServiceError extends Error {
       | "INVALID_TRANSITION"
       | "FORBIDDEN_ACTION"
       | "STORE",
+    readonly fields?: Record<string, string>,
   ) {
     super(message);
     this.name = "AdminServiceError";
@@ -126,6 +133,14 @@ export type AdminBookingDetail = {
     }>;
   }>;
   allowedTransitions: BookingStatus[];
+  paymentLedger: {
+    expectedTotal: number;
+    paidTotal: number;
+    outstanding: number;
+    currency: string;
+    canRecordOffline: boolean;
+    recordOfflineBlockedReason: string | null;
+  };
   ticketingNote: string;
   supplier: {
     supplierCode: string | null;
@@ -377,6 +392,33 @@ export async function listAdminBookings(
   };
 }
 
+function buildPaymentLedger(
+  expectedTotal: number,
+  currency: string,
+  status: BookingStatus,
+  payments: StoredPayment[],
+) {
+  const paidTotal = sumCountedPayments(payments);
+  const outstanding = outstandingBalance(expectedTotal, payments);
+  let recordOfflineBlockedReason: string | null = null;
+  if (!canRecordOfflineAgainstStatus(status)) {
+    recordOfflineBlockedReason = `Offline payment cannot be recorded while the booking is ${status}.`;
+  } else if (hasOpenCheckoutPayment(payments)) {
+    recordOfflineBlockedReason =
+      "An open checkout payment already exists. Verify that payment instead of recording a new offline payment.";
+  } else if (outstanding <= 0) {
+    recordOfflineBlockedReason = "This booking is already fully paid.";
+  }
+  return {
+    expectedTotal: Math.round(expectedTotal),
+    paidTotal,
+    outstanding,
+    currency,
+    canRecordOffline: recordOfflineBlockedReason === null,
+    recordOfflineBlockedReason,
+  };
+}
+
 export async function getAdminBookingDetail(
   actorId: string,
   reference: string,
@@ -480,6 +522,7 @@ export async function getAdminBookingDetail(
       })),
     })),
     allowedTransitions: allowedBookingTransitions(booking.status),
+    paymentLedger: buildPaymentLedger(booking.totalAmount, booking.currency, booking.status, payments),
     ticketingNote:
       booking.status === "TICKETING_PENDING"
         ? "Awaiting authoritative supplier ticketing. Admin cannot confirm tickets or invent PNRs."

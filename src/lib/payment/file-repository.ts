@@ -73,19 +73,22 @@ export class FilePaymentRepository implements PaymentRepository {
   async createPayment(input: CreatePaymentInput): Promise<StoredPayment> {
     const store = await readStore();
     const now = new Date().toISOString();
+    if (store.payments.some((item) => item.idempotencyKey === input.idempotencyKey)) {
+      throw new Error("PAYMENT_IDEMPOTENCY_CONFLICT");
+    }
     const payment: StoredPayment = {
       id: randomUUID(),
       bookingId: input.bookingId,
       amount: input.amount,
       currency: input.currency,
-      status: "PENDING",
-      method: "CARD",
+      status: input.status ?? "PENDING",
+      method: input.method === "CASH" ? "OTHER" : (input.method ?? "CARD"),
       provider: input.provider,
-      providerRef: null,
+      providerRef: input.providerRef ?? null,
       idempotencyKey: input.idempotencyKey,
       isMock: input.isMock,
       last4: null,
-      paidAt: null,
+      paidAt: input.paidAt ?? null,
       failureReason: null,
       metadata: input.metadata ?? null,
       createdAt: now,

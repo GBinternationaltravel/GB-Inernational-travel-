@@ -67,6 +67,11 @@ export type CreatePaymentInput = {
   isMock: boolean;
   idempotencyKey: string;
   metadata?: Record<string, unknown>;
+  /** Defaults to CARD / PENDING for checkout. Offline recording sets these explicitly. */
+  method?: StoredPayment["method"];
+  status?: PaymentStatus;
+  providerRef?: string | null;
+  paidAt?: string | null;
 };
 
 export type CreateAttemptInput = {

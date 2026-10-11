@@ -13,6 +13,9 @@ import { AdminServiceError } from "@/services/admin-booking-service";
 import { dispatchTravelNotification } from "@/services/notification-service";
 import type { SupplierTicketingResult } from "@/services/supplier-ticketing-service";
 import { snapshotFlightNumber } from "@/lib/flights/flight-number";
+import { canIssueTicketFromStatus, ticketAlreadyIssued } from "@/lib/payment/offline";
+
+export { canIssueTicketFromStatus, ticketAlreadyIssued };
 
 export type TicketIssuerMode = "MOCK" | "SANDBOX" | "MANUAL" | "LIVE";
 
@@ -82,10 +85,14 @@ export async function issueTicketManually(
     throw new AdminServiceError("Booking not found.", "NOT_FOUND");
   }
 
-  if (
-    booking.status !== "PAYMENT_RECEIVED" &&
-    booking.status !== "TICKETING_PENDING"
-  ) {
+  if (ticketAlreadyIssued(booking.status, booking.supplierTicketingStatus)) {
+    throw new AdminServiceError(
+      "A ticket has already been issued for this booking.",
+      "VALIDATION",
+    );
+  }
+
+  if (!canIssueTicketFromStatus(booking.status)) {
     throw new AdminServiceError(
       `Cannot issue ticket from status ${booking.status}. Payment must be verified first.`,
       "INVALID_TRANSITION",

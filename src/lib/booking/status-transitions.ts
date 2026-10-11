@@ -40,3 +40,22 @@ export function assertBookingTransition(from: BookingStatus, to: BookingStatus):
     );
   }
 }
+
+/**
+ * Legal steps from a paid booking toward TICKETING_PENDING.
+ * Each hop is already in BOOKING_TRANSITIONS. Never includes CONFIRMED.
+ */
+export function bookingStepsToTicketingPending(status: BookingStatus): BookingStatus[] {
+  if (status === "PENDING_PAYMENT" || status === "PAYMENT_PROCESSING") {
+    return ["PAYMENT_RECEIVED", "TICKETING_PENDING"];
+  }
+  if (status === "PAYMENT_RECEIVED") {
+    return ["TICKETING_PENDING"];
+  }
+  return [];
+}
+
+/** True when the booking is already TICKETING_PENDING or can legally walk there. */
+export function canReachTicketingPendingFrom(status: BookingStatus): boolean {
+  return status === "TICKETING_PENDING" || bookingStepsToTicketingPending(status).length > 0;
+}

@@ -8,6 +8,8 @@ import {
 import { AdminStoreBanner } from "@/features/admin/admin-ui";
 import { BookingStatusForm } from "@/features/admin/booking-status-form";
 import { IssueTicketForm } from "@/features/admin/issue-ticket-form";
+import { OfflinePaymentForm } from "@/features/admin/offline-payment-form";
+import { hasPermission } from "@/lib/auth/permissions";
 import { BookingStatusBadge } from "@/components/booking/booking-status-badge";
 import { Alert } from "@/components/ui/alert";
 import {
@@ -259,6 +261,20 @@ export default async function AdminBookingDetailPage({ params }: Params) {
           </div>
         )}
       </section>
+
+      {hasPermission(admin.role, "payments.verify") ? (
+        <OfflinePaymentForm
+          bookingReference={booking.reference}
+          expectedTotal={booking.paymentLedger.expectedTotal}
+          outstanding={booking.paymentLedger.outstanding}
+          currency={booking.paymentLedger.currency}
+          blockedReason={
+            booking.paymentLedger.canRecordOffline
+              ? null
+              : booking.paymentLedger.recordOfflineBlockedReason
+          }
+        />
+      ) : null}
 
       <BookingStatusForm key={booking.status}
         reference={booking.reference}
