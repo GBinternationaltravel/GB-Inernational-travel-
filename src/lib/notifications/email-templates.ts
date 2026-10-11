@@ -1,4 +1,6 @@
 import type { TravelNotificationTemplateKey } from "@/services/notification-templates";
+import { getPublicAppUrl } from "@/config/app-url";
+import { eTicketUrl } from "@/lib/booking/eticket";
 
 export type RenderedEmail = {
   subject: string;
@@ -80,18 +82,26 @@ export function renderTravelEmail(input: {
   };
 
   const selected = content[input.template];
+  // Ticket-issued email links to the printable e-ticket (sign-in required to view it).
+  const ticketLink =
+    input.template === "BOOKING_CONFIRMED" ? eTicketUrl(ref, getPublicAppUrl()) : null;
+  const ticketLinkHtml = ticketLink
+    ? `\n  <p style="margin:0 0 12px"><a href="${escapeHtml(ticketLink)}" style="color:#087f5b;font-weight:bold">View / print your e-ticket</a></p>`
+    : "";
   const html = `<!DOCTYPE html>
 <html><body style="font-family:Georgia,serif;color:#102a43;line-height:1.5">
   <h1 style="font-size:22px;margin:0 0 12px">GB International Travel</h1>
   <p style="margin:0 0 12px">${escapeHtml(selected.intro)}</p>
-  <p style="margin:0 0 12px">${escapeHtml(selected.text)}</p>
+  <p style="margin:0 0 12px">${escapeHtml(selected.text)}</p>${ticketLinkHtml}
   <p style="margin:0;color:#627d98;font-size:13px">Booking reference: ${escapeHtml(ref)}</p>
   <p style="margin:16px 0 0;color:#627d98;font-size:12px">This message never includes passport or payment card details.</p>
 </body></html>`;
 
   return {
     subject: selected.subject,
-    text: selected.text,
+    text: ticketLink
+      ? `${selected.text}\n\nView / print your e-ticket: ${ticketLink}`
+      : selected.text,
     html,
   };
 }

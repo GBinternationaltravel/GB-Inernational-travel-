@@ -445,7 +445,7 @@ async function seedFaqs() {
     {
       question: "Are the flight prices on this site live airline fares?",
       answer:
-        "Mock and sandbox results are clearly labeled. Live Travelport inventory requires configured supplier credentials. Agency markup is applied server-side on the supplier fare.",
+        "Mock and sandbox results are clearly labeled. Live Travelport inventory requires configured supplier credentials. The fare shown already includes all taxes and fees.",
       category: "flights",
       sortOrder: 2,
     },
@@ -456,9 +456,9 @@ async function seedFaqs() {
       sortOrder: 3,
     },
     {
-      question: "How is agency markup calculated?",
+      question: "Does the price I see include everything?",
       answer:
-        "On supplier fare: 5% for amounts up to PKR 50,000 and 3.5% above PKR 50,000. Markup is calculated once on the server and never compounded on refresh.",
+        "Yes. The fare shown on search results, at checkout and on your e-ticket already includes all taxes and fees. The amount you pay is the total shown, with nothing added at payment.",
       category: "payments",
       sortOrder: 4,
     },
@@ -661,7 +661,7 @@ async function seedDeals() {
       originCode: "LHE",
       destinationCode: "IST",
       price: 78000,
-      description: "Sample marketing deal above PKR 50,000 band for markup demos.",
+      description: "Sample marketing fare card for pricing demos.",
     },
   ];
   for (const deal of deals) {

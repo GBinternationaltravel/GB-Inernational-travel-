@@ -24,6 +24,9 @@ import { getCityByIata, destinationPath } from "@/data/destinations/catalog";
 import { listNotificationsForBooking } from "@/lib/notifications/notification-store";
 import { getNotificationEnv } from "@/config/notifications";
 import { getWeatherProviderStatus } from "@/services/weather-service";
+import { eTicketPath, isBookingTicketed } from "@/lib/booking/eticket";
+import { CUSTOMER_FARE_LABEL } from "@/lib/booking/customer-price";
+import { snapshotFlightNumber } from "@/lib/flights/flight-number";
 
 type Params = { params: Promise<{ bookingReference: string }> };
 
@@ -59,7 +62,7 @@ export default async function TripDetailsPage({ params }: Params) {
     getDestinationWeather(offer.destination),
     getBookingFlightStatus({
       bookingReference: trip.reference,
-      flightNumber: offer.flightNumber,
+      flightNumber: snapshotFlightNumber(offer) ?? offer.flightNumber,
       origin: offer.origin,
       destination: offer.destination,
       departureAt: offer.departureAt,
@@ -79,6 +82,10 @@ export default async function TripDetailsPage({ params }: Params) {
   );
   const emailEnv = getNotificationEnv();
   const weatherStatus = getWeatherProviderStatus();
+  const ticketed = isBookingTicketed({
+    status: trip.status,
+    pnr: trip.supplier.supplierBookingRef,
+  });
 
   return (
     <Container className="py-8 sm:py-10">
@@ -94,6 +101,20 @@ export default async function TripDetailsPage({ params }: Params) {
         <BookingStatusBadge status={trip.status} />
       </div>
 
+      {ticketed ? (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] border-l-4 border-l-[var(--color-emerald)] bg-white p-4">
+          <p className="text-sm">
+            Your ticket has been issued. View or print your e-ticket to take to the airport.
+          </p>
+          <Link
+            href={eTicketPath(trip.reference)}
+            className="inline-flex h-10 items-center rounded-md bg-[var(--color-brand)] px-4 text-sm font-medium text-white"
+          >
+            View / print e-ticket
+          </Link>
+        </div>
+      ) : null}
+
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-[var(--color-border)] bg-white p-4 sm:p-5">
           <h2 className="font-display text-xl">Flight information</h2>
@@ -105,7 +126,7 @@ export default async function TripDetailsPage({ params }: Params) {
             <Item label="Duration" value={formatDuration(offer.durationMinutes)} />
             <Item label="Stops" value={stopsLabel(offer.stops)} />
             <Item label="Airline" value={offer.airlineName} />
-            <Item label="Flight number" value={offer.flightNumber} />
+            <Item label="Flight number" value={snapshotFlightNumber(offer) ?? "—"} />
             <Item label="Cabin" value={cabinLabel} />
             <Item label="Baggage" value={`${offer.baggageKg} KG`} />
           </dl>
@@ -162,9 +183,7 @@ export default async function TripDetailsPage({ params }: Params) {
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <Item label="Email" value={trip.contactEmailMasked} />
             <Item label="Phone" value={trip.contactPhoneMasked} />
-            <Item label="Base fare" value={formatPrice(trip.subtotalAmount, trip.currency)} />
-            <Item label="Taxes" value={formatPrice(trip.taxesAmount, trip.currency)} />
-            <Item label="GB service fee" value={formatPrice(trip.feesAmount, trip.currency)} />
+            <Item label={CUSTOMER_FARE_LABEL} value={formatPrice(trip.totalAmount, trip.currency)} />
             <Item label="Total" value={formatPrice(trip.totalAmount, trip.currency)} />
           </dl>
           <Alert variant="warning" className="mt-4">
@@ -303,7 +322,7 @@ export default async function TripDetailsPage({ params }: Params) {
         </Alert>
         <div className="mt-4 flex flex-wrap gap-4 text-sm">
           <Link
-            href={`/flight-status?flight=${encodeURIComponent(offer.flightNumber)}&date=${encodeURIComponent(offer.departureAt.slice(0, 10))}`}
+            href={`/flight-status?flight=${encodeURIComponent(snapshotFlightNumber(offer) ?? offer.flightNumber)}&date=${encodeURIComponent(offer.departureAt.slice(0, 10))}`}
             className="font-medium text-[var(--color-brand)]"
           >
             Open flight status lookup
@@ -357,6 +376,14 @@ export default async function TripDetailsPage({ params }: Params) {
             className="inline-flex h-11 items-center rounded-md border border-[var(--color-border)] px-4 text-sm font-medium"
           >
             View payment confirmation
+          </Link>
+        ) : null}
+        {ticketed ? (
+          <Link
+            href={eTicketPath(trip.reference)}
+            className="inline-flex h-11 items-center rounded-md bg-[var(--color-brand)] px-4 text-sm font-medium text-white"
+          >
+            View / print e-ticket
           </Link>
         ) : null}
         <Link

@@ -243,7 +243,7 @@ describe("Phase 8 protected My Trips data", () => {
       passengers: [
         {
           id: "p1",
-          passengerType: "ADT",
+          passengerType: "ADULT",
           firstName: "Ali",
           middleName: undefined,
           lastName: "Khan",
@@ -282,6 +282,10 @@ describe("Phase 8 protected My Trips data", () => {
           baseFare: 100000,
           taxes: 5000,
           fees: 1000,
+          supplierFare: 105000,
+          markupRate: 0.0095,
+          feePerSeat: 1000,
+          feeSeats: 1,
           total: 106000,
           isMock: true,
           notice: "Mock pricing",
@@ -302,5 +306,8 @@ describe("Phase 8 protected My Trips data", () => {
     );
     assert.match(safe.contactEmailMasked, /\*\*\*/);
     assert.ok(!JSON.stringify(safe).includes("PK9988776"));
+    // Customer-facing notice never describes the GB service fee.
+    assert.doesNotMatch(safe.pricingNotice, /service fee|per seat/i);
+    assert.match(safe.pricingNotice, /includes all taxes and fees/);
   });
 });

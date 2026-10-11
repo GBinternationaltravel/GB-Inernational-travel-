@@ -4,6 +4,7 @@ import type {
   FlightStatusSnapshot,
 } from "@/types/flight-status";
 import type { FlightStatusProvider } from "@/providers/flight-status/types";
+import { splitFlightNumber } from "@/lib/flights/flight-number";
 
 const MOCK_STATUSES: Array<{
   status: FlightStatusCode;
@@ -43,7 +44,7 @@ export class MockFlightStatusProvider implements FlightStatusProvider {
 
     return {
       flightNumber,
-      airlineCode: flightNumber.slice(0, 2),
+      airlineCode: splitFlightNumber(flightNumber)?.carrier || flightNumber.slice(0, 2),
       origin: input.origin?.toUpperCase() ?? "—",
       destination: input.destination?.toUpperCase() ?? "—",
       departureAt: input.date,

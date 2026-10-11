@@ -12,6 +12,7 @@ import { getAdminSettings } from "@/services/admin-cms-service";
 import { AdminServiceError } from "@/services/admin-booking-service";
 import { dispatchTravelNotification } from "@/services/notification-service";
 import type { SupplierTicketingResult } from "@/services/supplier-ticketing-service";
+import { snapshotFlightNumber } from "@/lib/flights/flight-number";
 
 export type TicketIssuerMode = "MOCK" | "SANDBOX" | "MANUAL" | "LIVE";
 
@@ -162,7 +163,7 @@ export async function issueTicketManually(
     bookingReference: booking.reference,
     recipientEmail: booking.contactEmail,
     destinationCity: booking.offerSnapshot?.destinationCity,
-    flightNumber: booking.offerSnapshot?.flightNumber,
+    flightNumber: snapshotFlightNumber(booking.offerSnapshot),
     bookingId: booking.id,
     userId: booking.userId,
     idempotencyKey: `ticket-issued:${booking.reference}:${pnr}`,

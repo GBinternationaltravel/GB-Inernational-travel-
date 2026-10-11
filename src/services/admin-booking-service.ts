@@ -3,6 +3,7 @@ import { ADMIN_PAGE_SIZE } from "@/config/admin";
 import { getBookingRepository } from "@/lib/booking/get-repository";
 import type { StoredBooking } from "@/lib/booking/repository";
 import { maskPassport } from "@/lib/booking/masking";
+import { describeServiceFee } from "@/lib/booking/pricing";
 import {
   allowedBookingTransitions,
   assertBookingTransition,
@@ -14,6 +15,7 @@ import { writeAuditLog } from "@/lib/security/audit";
 import { isProductionAdminStoreRequired } from "@/lib/auth/admin";
 import { getSupplierTicketingService } from "@/services/supplier-ticketing-service";
 import { dispatchTravelNotification } from "@/services/notification-service";
+import { snapshotFlightNumber } from "@/lib/flights/flight-number";
 
 export class AdminServiceError extends Error {
   constructor(
@@ -61,6 +63,8 @@ export type AdminBookingDetail = {
   feesAmount: number;
   supplierFare: number;
   markupRate: number | null;
+  /** e.g. "PKR 1,500 per seat × 2" (or "5%" for bookings priced before the per-seat fee). */
+  serviceFeeBasis: string | null;
   pricingNotice: string | null;
   contactEmail: string;
   contactPhone: string;
@@ -412,6 +416,7 @@ export async function getAdminBookingDetail(
       offer?.pricing?.supplierFare ??
       booking.subtotalAmount + booking.taxesAmount,
     markupRate: offer?.pricing?.markupRate ?? null,
+    serviceFeeBasis: describeServiceFee(offer?.pricing),
     pricingNotice: offer?.pricing?.notice ?? null,
     contactEmail: booking.contactEmail,
     contactPhone: `${booking.contactPhoneCountry} ${booking.contactPhone}`.trim(),
@@ -431,7 +436,7 @@ export async function getAdminBookingDetail(
       departureAt: offer?.departureAt ?? "",
       arrivalAt: offer?.arrivalAt ?? "",
       airlineName: offer?.airlineName ?? "",
-      flightNumber: offer?.flightNumber ?? "",
+      flightNumber: snapshotFlightNumber(offer) ?? "",
       cabinClass: offer?.cabinClass ?? booking.cabinClass,
       baggageKg: offer?.baggageKg ?? 0,
       stops: offer?.stops ?? 0,
@@ -555,7 +560,7 @@ export async function transitionAdminBookingStatus(input: {
       bookingReference: booking.reference,
       recipientEmail: booking.contactEmail,
       destinationCity: booking.offerSnapshot?.destinationCity,
-      flightNumber: booking.offerSnapshot?.flightNumber,
+      flightNumber: snapshotFlightNumber(booking.offerSnapshot),
       bookingId: booking.id,
       userId: booking.userId,
       idempotencyKey: `booking-cancelled:${booking.reference}`,

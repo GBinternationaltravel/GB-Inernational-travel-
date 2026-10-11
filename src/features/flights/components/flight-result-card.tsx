@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { FlightOffer } from "@/types/flight";
 import { calculateOfferPriceSnapshot } from "@/lib/booking/pricing";
+import { CUSTOMER_FARE_LABEL } from "@/lib/booking/customer-price";
 import {
   formatDuration,
   formatFlightTime,
@@ -12,6 +13,7 @@ import {
   formatBaggageLabel,
   stopsLabel,
 } from "@/lib/flights/filter-sort";
+import { formatFlightNumber } from "@/lib/flights/flight-number";
 
 export function FlightResultCard({
   offer,
@@ -31,8 +33,8 @@ export function FlightResultCard({
   if (!first || !last) return null;
 
   const airline = first.airline;
+  // Customers see one all-inclusive fare; the GB service fee is never shown separately.
   const pricing = calculateOfferPriceSnapshot(offer);
-  const ratePct = (pricing.markupRate * 100).toFixed(pricing.markupRate === 0.035 ? 1 : 0);
   const displayTotal = priceMode === "leg" ? pricing.supplierFare : pricing.total;
 
   return (
@@ -48,7 +50,7 @@ export function FlightResultCard({
           <div>
             <p className="font-semibold text-[var(--color-navy)]">{airline.name}</p>
             <p className="text-sm text-[var(--color-muted)]">
-              {first.flightNumber}
+              {formatFlightNumber(first.flightNumber, first.airline.iataCode)}
               {offer.cabinClass ? ` · ${offer.cabinClass.replaceAll("_", " ")}` : null}
             </p>
           </div>
@@ -56,7 +58,11 @@ export function FlightResultCard({
         <Badge variant={offer.isMock ? "warning" : "info"}>
           {offer.isMock
             ? "Mock inventory"
-            : "Live pre-production — not a confirmed ticket"}
+            : offer.supplierCode === "INVENTORY"
+              ? typeof offer.seatsRemaining === "number" && offer.seatsRemaining <= 5
+                ? `${offer.seatsRemaining} ${offer.seatsRemaining === 1 ? "seat" : "seats"} left`
+                : "Seats available"
+              : "Live pre-production — not a confirmed ticket"}
         </Badge>
       </div>
 
@@ -101,39 +107,18 @@ export function FlightResultCard({
           </div>
           <dl className="mt-3 grid max-w-md gap-1 text-sm">
             <div className="flex justify-between gap-4">
-              <dt className="text-[var(--color-muted)]">Base fare</dt>
-              <dd className="font-medium tabular-nums">
-                {formatPrice(pricing.baseFare, pricing.currency)}
-              </dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-[var(--color-muted)]">Taxes</dt>
-              <dd className="font-medium tabular-nums">
-                {formatPrice(pricing.taxes, pricing.currency)}
-              </dd>
-            </div>
-            {priceMode === "trip" ? (
-              <div className="flex justify-between gap-4">
-                <dt className="text-[var(--color-muted)]">
-                  GB service fee ({ratePct}%)
-                </dt>
-                <dd className="font-medium tabular-nums">
-                  {formatPrice(pricing.fees, pricing.currency)}
-                </dd>
-              </div>
-            ) : (
-              <p className="text-xs text-[var(--color-muted)]">
-                GB service fee is applied once to the combined round-trip fare.
-              </p>
-            )}
-            <div className="flex justify-between gap-4 border-t border-[var(--color-border)] pt-1.5">
-              <dt className="font-semibold text-[var(--color-navy)]">
-                {priceMode === "leg" ? "Supplier fare" : "Total"}
+              <dt className="text-[var(--color-muted)]">
+                {priceMode === "leg" ? "Supplier fare" : CUSTOMER_FARE_LABEL}
               </dt>
-              <dd className="font-bold tabular-nums text-[var(--color-navy)]">
+              <dd className="font-medium tabular-nums">
                 {formatPrice(displayTotal, pricing.currency)}
               </dd>
             </div>
+            {priceMode === "leg" ? (
+              <p className="text-xs text-[var(--color-muted)]">
+                Combined fare and GB service fee are calculated after both flights are selected.
+              </p>
+            ) : null}
           </dl>
         </div>
         <div className="flex shrink-0 items-center justify-between gap-4 lg:flex-col lg:items-end">

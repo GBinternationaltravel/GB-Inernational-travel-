@@ -70,20 +70,20 @@ async function main() {
 
   // Markup once
   const cases = [
-    { fare: 25_000, rate: 0.05 },
-    { fare: 40_000, rate: 0.05 },
-    { fare: 50_000, rate: 0.05 },
-    { fare: 50_001, rate: 0.035 },
-    { fare: 60_000, rate: 0.035 },
-    { fare: 100_000, rate: 0.035 },
+    { fare: 25_000, fee: 1_000 },
+    { fare: 30_000, fee: 1_000 },
+    { fare: 30_001, fee: 1_500 },
+    { fare: 45_000, fee: 1_500 },
+    { fare: 100_000, fee: 1_500 },
+    { fare: 150_000, fee: 2_500 },
   ];
   for (const c of cases) {
     const m = calculateAgencyMarkup(c.fare);
     try {
-      assert.equal(m.rate, c.rate);
+      assert.equal(m.markup, c.fee);
       assert.equal(m.customerTotal, c.fare + m.markup);
       assert.equal(calculateAgencyMarkup(m.supplierFare).markup, m.markup);
-      pass("MARKUP", `${c.fare} → ${m.rate} total=${m.customerTotal}`);
+      pass("MARKUP", `${c.fare} → fee ${m.markup} total=${m.customerTotal}`);
     } catch (e) {
       failures += 1;
       fail("MARKUP", `${c.fare}: ${e instanceof Error ? e.message : e}`);

@@ -7,6 +7,7 @@ import type { StoredPayment } from "@/lib/payment/repository";
 import { prisma } from "@/lib/db";
 import { writeAuditLog } from "@/lib/security/audit";
 import { AdminServiceError } from "@/services/admin-booking-service";
+import { snapshotFlightNumber } from "@/lib/flights/flight-number";
 
 export type ReportFilters = {
   dateFrom?: string;
@@ -55,7 +56,7 @@ function matchesQuery(booking: StoredBooking, q: string): boolean {
     booking.offerSnapshot?.airlineName,
     booking.offerSnapshot?.originCity,
     booking.offerSnapshot?.destinationCity,
-    booking.offerSnapshot?.flightNumber,
+    snapshotFlightNumber(booking.offerSnapshot),
     booking.status,
   ]
     .filter(Boolean)

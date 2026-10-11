@@ -12,6 +12,7 @@ import { BookingProgress } from "@/features/booking/booking-progress";
 import { BookingStatusBadge } from "@/components/booking/booking-status-badge";
 import { formatPrice } from "@/lib/flights/filter-sort";
 import type { SafeBookingView } from "@/types/booking";
+import { snapshotFlightNumber } from "@/lib/flights/flight-number";
 
 export function BookingConfirmationClient() {
   const searchParams = useSearchParams();
@@ -139,7 +140,7 @@ export function BookingConfirmationClient() {
               <div>
                 <dt className="text-[var(--color-muted)]">Flight</dt>
                 <dd className="font-medium">
-                  {booking.offer.airlineName} · {booking.offer.flightNumber}
+                  {booking.offer.airlineName} · {snapshotFlightNumber(booking.offer)}
                 </dd>
               </div>
               <div>

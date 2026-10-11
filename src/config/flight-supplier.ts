@@ -6,14 +6,19 @@
  * Secrets must never use NEXT_PUBLIC_*.
  */
 
-export type FlightSupplierCode = "mock" | "travelport";
+/**
+ * - inventory (default): flights the owner manages in Admin → Flights (database-backed).
+ * - mock: hard-coded development fixtures (set FLIGHT_SUPPLIER=mock explicitly).
+ * - travelport: Travelport pre-production (sandbox) supplier.
+ */
+export type FlightSupplierCode = "inventory" | "mock" | "travelport";
 
 export type TravelportEnvironment = "sandbox" | "production";
 
 export function getFlightSupplierEnv() {
-  const raw = (process.env.FLIGHT_SUPPLIER ?? "mock").toLowerCase().trim();
+  const raw = (process.env.FLIGHT_SUPPLIER ?? "").toLowerCase().trim();
   const activeSupplier: FlightSupplierCode =
-    raw === "travelport" ? "travelport" : "mock";
+    raw === "travelport" ? "travelport" : raw === "mock" ? "mock" : "inventory";
 
   const environmentRaw = (
     process.env.TRAVELPORT_ENVIRONMENT ?? "sandbox"

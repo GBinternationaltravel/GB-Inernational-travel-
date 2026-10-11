@@ -6,6 +6,7 @@ import {
   calculateAgencyMarkup,
   calculateCombinedOfferPriceSnapshot,
   calculateOfferPriceSnapshot,
+  markupOptionsForOffer,
 } from "@/lib/booking/pricing";
 
 const bodySchema = z.object({
@@ -59,16 +60,17 @@ export async function POST(request: Request) {
       currency: parsed.data.currency,
       departureDate: parsed.data.departureDate,
     });
+    const feeOptions = outbound.offer ? markupOptionsForOffer(outbound.offer) : undefined;
 
     if (!parsed.data.returnInternalOfferId) {
       const customerPrevious =
         typeof outbound.previousTotal === "number"
-          ? calculateAgencyMarkup(outbound.previousTotal).customerTotal
+          ? calculateAgencyMarkup(outbound.previousTotal, feeOptions).customerTotal
           : undefined;
       const customerCurrent = outbound.offer
         ? calculateOfferPriceSnapshot(outbound.offer).total
         : typeof outbound.currentTotal === "number"
-          ? calculateAgencyMarkup(outbound.currentTotal).customerTotal
+          ? calculateAgencyMarkup(outbound.currentTotal, feeOptions).customerTotal
           : undefined;
 
       return NextResponse.json({
@@ -107,11 +109,11 @@ export async function POST(request: Request) {
       outbound.offer && inbound.offer
         ? Math.round(outbound.offer.totalPrice) + Math.round(inbound.offer.totalPrice)
         : (outbound.currentTotal ?? 0) + (inbound.currentTotal ?? 0);
-    const customerPrevious = calculateAgencyMarkup(supplierPrevious).customerTotal;
+    const customerPrevious = calculateAgencyMarkup(supplierPrevious, feeOptions).customerTotal;
     const customerCurrent =
       outbound.offer && inbound.offer
         ? calculateCombinedOfferPriceSnapshot([outbound.offer, inbound.offer]).total
-        : calculateAgencyMarkup(supplierCurrent).customerTotal;
+        : calculateAgencyMarkup(supplierCurrent, feeOptions).customerTotal;
     const changed =
       outbound.status === "PRICE_CHANGED" || inbound.status === "PRICE_CHANGED";
 

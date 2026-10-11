@@ -8,6 +8,17 @@
   --radius-lg: 0.75rem;
   --shadow-soft: 0 1px 2px rgb(11 31 58 / 0.04), 0 8px 24px rgb(11 31 58 / 0.06);
   --shadow-elevated: 0 4px 12px rgb(11 31 58 / 0.08), 0 16px 40px rgb(11 31 58 / 0.08);
+  /* Homepage hero: very slow one-time "Ken Burns" zoom (disabled for prefers-reduced-motion). */
+  --animate-gb-kenburns: gb-kenburns 28s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+
+  @keyframes gb-kenburns {
+    from {
+      transform: scale(1.0);
+    }
+    to {
+      transform: scale(1.07);
+    }
+  }
 }
 
 :root {
@@ -79,11 +90,13 @@ body {
   letter-spacing: -0.02em;
 }
 
-h1,
-h2,
-h3 {
-  color: var(--color-navy);
-  letter-spacing: -0.02em;
+@layer base {
+  h1,
+  h2,
+  h3 {
+    color: var(--color-navy);
+    letter-spacing: -0.02em;
+  }
 }
 
 a {
@@ -110,4 +123,29 @@ textarea:focus-visible,
   --color-brand: var(--color-emerald);
   --color-surface: #ffffff;
   background: #f4f6fa;
+}
+
+/* Printable e-ticket (/my-trips/[ref]/ticket): print only the ticket itself. */
+@media print {
+  body:has(.gb-eticket) {
+    background: #ffffff;
+    min-height: 0;
+  }
+
+  body:has(.gb-eticket) header,
+  body:has(.gb-eticket) footer,
+  body:has(.gb-eticket) nav {
+    display: none !important;
+  }
+
+  body:has(.gb-eticket) main > * {
+    max-width: none;
+    padding: 0;
+  }
+
+  .gb-eticket {
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

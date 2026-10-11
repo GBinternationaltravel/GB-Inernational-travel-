@@ -65,7 +65,7 @@ export function FlightResultsExperience({
   const [offers] = useState(initialOffers);
   const [inboundOffers] = useState(returnOffers);
   const [filters, setFilters] = useState<FlightFiltersState>(defaultFlightFilters());
-  const [sort, setSort] = useState<FlightSortOption>("recommended");
+  const [sort, setSort] = useState<FlightSortOption>("cheapest");
   const [modifyOpen, setModifyOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -389,13 +389,20 @@ export function FlightResultsExperience({
             </div>
           ) : null}
 
-          <Alert variant="warning" className="mb-4">
-            {isMock
-              ? "Showing mock development inventory only. These are not live airline fares or seats."
-              : `Live pre-production supplier data (${supplierCode}${
-                  supplierEnvironment ? ` · ${supplierEnvironment}` : ""
-                }). These are not confirmed flights or issued tickets.`}
-          </Alert>
+          {supplierCode === "INVENTORY" && !isMock ? (
+            <Alert variant="info" className="mb-4">
+              Fares and seats are confirmed by GB International Travel. Your e-ticket is issued
+              after payment is verified.
+            </Alert>
+          ) : (
+            <Alert variant="warning" className="mb-4">
+              {isMock
+                ? "Showing mock development inventory only. These are not live airline fares or seats."
+                : `Live pre-production supplier data (${supplierCode}${
+                    supplierEnvironment ? ` · ${supplierEnvironment}` : ""
+                  }). These are not confirmed flights or issued tickets.`}
+            </Alert>
+          )}
 
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-[var(--color-muted)]">

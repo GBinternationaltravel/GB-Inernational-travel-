@@ -403,15 +403,11 @@ export function PassengerDetailsForm({
       <div className="sticky bottom-0 z-20 -mx-4 border-t border-[var(--color-border)] bg-white/95 px-4 py-4 backdrop-blur sm:static sm:mx-0 sm:rounded-xl sm:border sm:px-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm text-[var(--color-muted)]">Estimated total (incl. markup)</p>
+            <p className="text-sm text-[var(--color-muted)]">Estimated total</p>
             <p className="font-display text-2xl">
               {formatPrice(estimate.total, estimate.currency)}
             </p>
-            <p className="mt-1 text-xs text-[var(--color-muted)]">
-              Supplier {formatPrice(estimate.supplierFare, estimate.currency)} + GB service fee{" "}
-              {formatPrice(estimate.fees, estimate.currency)} (
-              {(estimate.markupRate * 100).toFixed(estimate.markupRate === 0.035 ? 1 : 0)}%)
-            </p>
+            <p className="mt-1 text-xs text-[var(--color-muted)]">Includes all taxes and fees.</p>
           </div>
           <Button type="submit" size="lg" className="w-full sm:w-auto" isLoading={submitting}>
             Continue to Review

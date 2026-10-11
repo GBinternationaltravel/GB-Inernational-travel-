@@ -7,6 +7,8 @@ import { siteConfig } from "@/config/site";
 
 const DISMISS_KEY = "gb-qa-dismissed";
 const AUTO_OPEN_MS = 2200;
+/** The homepage hero search panel; the launcher stays out of its way while it is on screen. */
+const HERO_SEARCH_ID = "search";
 
 type PanelView = "menu" | "agent";
 
@@ -32,6 +34,8 @@ export function QuickAssistance() {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<PanelView>("menu");
+  const [searchInView, setSearchInView] = useState(true);
+  const [autoOpenDue, setAutoOpenDue] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -43,9 +47,32 @@ export function QuickAssistance() {
     }
     if (dismissed) return;
 
-    const timer = window.setTimeout(() => setOpen(true), AUTO_OPEN_MS);
+    const timer = window.setTimeout(() => setAutoOpenDue(true), AUTO_OPEN_MS);
     return () => window.clearTimeout(timer);
   }, []);
+
+  // Hide the launcher (and hold back the auto-open) while the hero search panel is visible,
+  // so it never covers the search form on desktop or mobile.
+  useEffect(() => {
+    const target = document.getElementById(HERO_SEARCH_ID);
+    if (!target || typeof IntersectionObserver === "undefined") {
+      setSearchInView(false);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => setSearchInView(Boolean(entry?.isIntersecting)),
+      { threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (autoOpenDue && !searchInView) {
+      setOpen(true);
+      setAutoOpenDue(false);
+    }
+  }, [autoOpenDue, searchInView]);
 
   function dismiss() {
     setOpen(false);
@@ -68,7 +95,11 @@ export function QuickAssistance() {
   const whatsappUrl = whatsappHref(siteConfig.contactWhatsApp);
 
   return (
-    <div className="pointer-events-none fixed right-3 bottom-3 z-50 flex flex-col items-end gap-3 sm:right-5 sm:bottom-5">
+    <div
+      className={`pointer-events-none fixed right-3 bottom-3 z-50 flex flex-col items-end gap-3 transition-[opacity,transform] duration-300 sm:right-5 sm:bottom-5 ${
+        searchInView && !open ? "invisible translate-y-3 opacity-0" : "visible translate-y-0 opacity-100"
+      }`}
+    >
       <div
         className={`pointer-events-auto w-[min(100vw-1.5rem,20.5rem)] origin-bottom-right overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white shadow-[var(--shadow-elevated)] transition-[opacity,transform] duration-200 ease-out ${
           open
@@ -185,13 +216,13 @@ export function QuickAssistance() {
 
       <button
         type="button"
-        className="pointer-events-auto inline-flex min-h-12 items-center gap-2 rounded-full bg-[var(--color-emerald)] px-4 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-elevated)] transition-[background-color,transform] duration-150 hover:bg-[var(--color-emerald-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-sky)] focus-visible:ring-offset-2"
+        className="pointer-events-auto inline-flex h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-[var(--color-emerald)] px-3.5 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-elevated)] transition-[background-color,transform] duration-150 hover:bg-[var(--color-emerald-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-sky)] focus-visible:ring-offset-2 sm:px-4"
         aria-expanded={open}
         aria-label={open ? "Minimize Quick Assistance" : "Open Quick Assistance"}
         onClick={() => (open ? dismiss() : openPanel())}
       >
-        <MessageCircle className="h-4 w-4 shrink-0" aria-hidden />
-        Quick Assistance
+        <MessageCircle className="h-5 w-5 shrink-0 sm:h-4 sm:w-4" aria-hidden />
+        <span className="hidden sm:inline">Quick Assistance</span>
       </button>
     </div>
   );

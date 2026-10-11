@@ -215,8 +215,12 @@ describe("Phase 7B Travelport adapter", () => {
     const request = body.CatalogProductOfferingsQueryRequest.CatalogProductOfferingsRequest;
     assert.equal(request.PassengerCriteria.length, 3);
     assert.equal(request.SearchCriteriaFlight.length, 2);
-    assert.equal(request.SearchCriteriaFlight[0]!.From.value, "ISB");
-    assert.equal(request.SearchCriteriaFlight[1]!.To.value, "ISB");
+    const legs = request.SearchCriteriaFlight as Array<{
+      From: { value: string };
+      To: { value: string };
+    }>;
+    assert.equal(legs[0]!.From.value, "ISB");
+    assert.equal(legs[1]!.To.value, "ISB");
   });
 
   it("normalizes search response including multiple segments", () => {
