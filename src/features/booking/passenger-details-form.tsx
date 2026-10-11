@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { genderOptions, passengerTypeLabels } from "@/config/booking";
 import { countries } from "@/data/countries";
 import type { SelectedFlightState } from "@/lib/flights/selection";
 import {
-  bookingDraftSchema,
+  bookingDraftSchemaForItinerary,
   getBookingFieldErrors,
   type PassengerInput,
 } from "@/lib/validations/booking";
@@ -21,6 +21,11 @@ import {
   calculateMockPriceSnapshot,
 } from "@/lib/booking/pricing";
 import { FlightFareBar } from "@/features/flights/components/flight-fare-bar";
+import {
+  isDomesticPakistanItinerary,
+  passengerIdentitySubmitFields,
+  resolvePassengerIdentityRules,
+} from "@/lib/booking/passenger-identity";
 
 type PassengerFormValue = {
   type: "ADULT" | "CHILD" | "INFANT";
@@ -74,6 +79,37 @@ export function PassengerDetailsForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const itineraryDomesticPakistan = useMemo(
+    () =>
+      isDomesticPakistanItinerary({
+        origin: selection.search.origin,
+        destination: selection.search.destination,
+        tripType: selection.search.tripType,
+        outboundOffer: selection.offer,
+        returnOffer: selection.returnOffer,
+      }),
+    [
+      selection.offer,
+      selection.returnOffer,
+      selection.search.destination,
+      selection.search.origin,
+      selection.search.tripType,
+    ],
+  );
+
+  const itineraryKey = [
+    selection.search.origin,
+    selection.search.destination,
+    selection.search.tripType,
+    selection.offer.supplierCode || selection.offer.providerCode,
+    selection.returnOffer?.supplierCode || selection.returnOffer?.providerCode || "",
+    itineraryDomesticPakistan ? "domestic" : "international",
+  ].join(":");
+
+  const didMountItinerary = useRef(false);
+  const passengersRef = useRef(passengers);
+  passengersRef.current = passengers;
+
   const estimate = useMemo(
     () =>
       selection.returnOffer
@@ -92,22 +128,123 @@ export function PassengerDetailsForm({
     label: `${country.name} (${country.dialCode})`,
   }));
 
+  function identityRulesFor(nationality: string) {
+    return resolvePassengerIdentityRules({
+      itineraryDomesticPakistan,
+      nationality,
+      supplierCode: selection.offer.supplierCode || selection.offer.providerCode,
+      returnSupplierCode:
+        selection.returnOffer?.supplierCode || selection.returnOffer?.providerCode,
+    });
+  }
+
+  function parseDraft(nextPassengers: PassengerFormValue[]) {
+    return bookingDraftSchemaForItinerary({
+      outboundOffer: selection.offer,
+      returnOffer: selection.returnOffer,
+    }).safeParse(buildDraftPayload(nextPassengers));
+  }
+
+  function buildDraftPayload(nextPassengers: PassengerFormValue[]) {
+    return {
+      offerId: selection.offer.id,
+      returnOfferId: selection.returnOffer?.id,
+      tripType: selection.search.tripType,
+      origin: selection.search.origin,
+      destination: selection.search.destination,
+      departureDate: selection.search.departureDate,
+      returnDate: selection.search.returnDate,
+      cabinClass: selection.search.cabinClass,
+      adults: selection.search.adults,
+      children: selection.search.children ?? 0,
+      infants: selection.search.infants ?? 0,
+      supplierCode: selection.offer.supplierCode || selection.offer.providerCode,
+      returnSupplierCode:
+        selection.returnOffer?.supplierCode || selection.returnOffer?.providerCode,
+      contact: {
+        email,
+        phoneCountryCode,
+        phone,
+      },
+      passengers: nextPassengers.map((passenger): PassengerInput => {
+        const identity = passengerIdentitySubmitFields(
+          passenger,
+          identityRulesFor(passenger.nationality),
+        );
+        return {
+          type: passenger.type,
+          firstName: passenger.firstName,
+          middleName: passenger.middleName || undefined,
+          lastName: identity.lastName,
+          dateOfBirth: passenger.dateOfBirth,
+          gender: passenger.gender,
+          nationality: passenger.nationality,
+          passportNumber: identity.passportNumber,
+          passportIssuingCountry: identity.passportIssuingCountry,
+          passportExpiry: identity.passportExpiry,
+        };
+      }),
+      specialRequests: specialRequests || undefined,
+    };
+  }
+
+  function revalidateIdentity(nextPassengers: PassengerFormValue[]) {
+    const parsed = parseDraft(nextPassengers);
+    setFieldErrors((current) => {
+      const next = { ...current };
+      for (const key of Object.keys(next)) {
+        if (
+          key.includes("lastName") ||
+          key.includes("passport") ||
+          key.includes("nationality")
+        ) {
+          delete next[key];
+        }
+      }
+      if (!parsed.success) {
+        const incoming = getBookingFieldErrors(parsed.error);
+        for (const [key, message] of Object.entries(incoming)) {
+          if (
+            key.includes("lastName") ||
+            key.includes("passport") ||
+            key.includes("nationality")
+          ) {
+            next[key] = message;
+          }
+        }
+      }
+      return next;
+    });
+  }
+
   function updatePassenger<K extends keyof PassengerFormValue>(
     index: number,
     key: K,
     value: PassengerFormValue[K],
   ) {
-    setPassengers((current) =>
-      current.map((passenger, i) =>
-        i === index ? { ...passenger, [key]: value } : passenger,
-      ),
+    const nextPassengers = passengers.map((passenger, i) =>
+      i === index ? { ...passenger, [key]: value } : passenger,
     );
+    setPassengers(nextPassengers);
     setFieldErrors((current) => {
       const next = { ...current };
       delete next[`passengers.${index}.${key}`];
       return next;
     });
+    if (key === "nationality") {
+      revalidateIdentity(nextPassengers);
+    }
   }
+
+  useEffect(() => {
+    if (!didMountItinerary.current) {
+      didMountItinerary.current = true;
+      return;
+    }
+    revalidateIdentity(passengersRef.current);
+    // Identity fields only — latest passengers are read from the ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itineraryKey]);
 
   function focusFirstError(errors: Record<string, string>) {
     const firstKey = Object.keys(errors)[0];
@@ -122,41 +259,7 @@ export function PassengerDetailsForm({
     event.preventDefault();
     setFormError(null);
 
-    const payload = {
-      offerId: selection.offer.id,
-      returnOfferId: selection.returnOffer?.id,
-      tripType: selection.search.tripType,
-      origin: selection.search.origin,
-      destination: selection.search.destination,
-      departureDate: selection.search.departureDate,
-      returnDate: selection.search.returnDate,
-      cabinClass: selection.search.cabinClass,
-      adults: selection.search.adults,
-      children: selection.search.children ?? 0,
-      infants: selection.search.infants ?? 0,
-      contact: {
-        email,
-        phoneCountryCode,
-        phone,
-      },
-      passengers: passengers.map(
-        (passenger): PassengerInput => ({
-          type: passenger.type,
-          firstName: passenger.firstName,
-          middleName: passenger.middleName || undefined,
-          lastName: passenger.lastName,
-          dateOfBirth: passenger.dateOfBirth,
-          gender: passenger.gender,
-          nationality: passenger.nationality,
-          passportNumber: passenger.passportNumber,
-          passportIssuingCountry: passenger.passportIssuingCountry,
-          passportExpiry: passenger.passportExpiry,
-        }),
-      ),
-      specialRequests: specialRequests || undefined,
-    };
-
-    const parsed = bookingDraftSchema.safeParse(payload);
+    const parsed = parseDraft(passengers);
     if (!parsed.success) {
       const errors = getBookingFieldErrors(parsed.error);
       setFieldErrors(errors);
@@ -232,7 +335,9 @@ export function PassengerDetailsForm({
         shown in URLs or logs.
       </Alert>
 
-      {passengers.map((passenger, index) => (
+      {passengers.map((passenger, index) => {
+        const identity = identityRulesFor(passenger.nationality);
+        return (
         <section
           key={`${passenger.type}-${index}`}
           className="rounded-xl border border-[var(--color-border)] bg-white p-4 sm:p-5"
@@ -261,15 +366,17 @@ export function PassengerDetailsForm({
               error={fieldErrors[`passengers.${index}.middleName`]}
               autoComplete="additional-name"
             />
-            <Input
-              label="Last name"
-              name={`passengers-${index}-lastName`}
-              data-field={`passengers-${index}-lastName`}
-              value={passenger.lastName}
-              onChange={(event) => updatePassenger(index, "lastName", event.target.value)}
-              error={fieldErrors[`passengers.${index}.lastName`]}
-              autoComplete="family-name"
-            />
+            {identity.showLastName ? (
+              <Input
+                label="Last name"
+                name={`passengers-${index}-lastName`}
+                data-field={`passengers-${index}-lastName`}
+                value={passenger.lastName}
+                onChange={(event) => updatePassenger(index, "lastName", event.target.value)}
+                error={fieldErrors[`passengers.${index}.lastName`]}
+                autoComplete="family-name"
+              />
+            ) : null}
             <DatePicker
               label="Date of birth"
               name={`passengers-${index}-dateOfBirth`}
@@ -294,7 +401,7 @@ export function PassengerDetailsForm({
               error={fieldErrors[`passengers.${index}.gender`]}
             />
             <Select
-              label="Nationality"
+              label="Nationality / citizenship"
               name={`passengers-${index}-nationality`}
               data-field={`passengers-${index}-nationality`}
               options={countryOptions}
@@ -303,42 +410,53 @@ export function PassengerDetailsForm({
               error={fieldErrors[`passengers.${index}.nationality`]}
             />
           </div>
+          {itineraryDomesticPakistan ? (
+            <p className="mt-3 text-xs text-[var(--color-muted)]">
+              Pakistani travelers do not need passport details on domestic Pakistan flights.
+              Foreign travelers still do.
+            </p>
+          ) : null}
 
-          <h3 className="mt-6 text-sm font-semibold tracking-wide text-[var(--color-muted)] uppercase">
-            Travel document
-          </h3>
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            <Input
-              label="Passport number"
-              name={`passengers-${index}-passportNumber`}
-              data-field={`passengers-${index}-passportNumber`}
-              value={passenger.passportNumber}
-              onChange={(event) => updatePassenger(index, "passportNumber", event.target.value)}
-              error={fieldErrors[`passengers.${index}.passportNumber`]}
-              autoComplete="off"
-            />
-            <Select
-              label="Passport issuing country"
-              name={`passengers-${index}-passportIssuingCountry`}
-              data-field={`passengers-${index}-passportIssuingCountry`}
-              options={countryOptions}
-              value={passenger.passportIssuingCountry}
-              onChange={(event) =>
-                updatePassenger(index, "passportIssuingCountry", event.target.value)
-              }
-              error={fieldErrors[`passengers.${index}.passportIssuingCountry`]}
-            />
-            <DatePicker
-              label="Passport expiry date"
-              name={`passengers-${index}-passportExpiry`}
-              data-field={`passengers-${index}-passportExpiry`}
-              value={passenger.passportExpiry}
-              onChange={(event) => updatePassenger(index, "passportExpiry", event.target.value)}
-              error={fieldErrors[`passengers.${index}.passportExpiry`]}
-            />
-          </div>
+          {identity.showPassport ? (
+            <>
+              <h3 className="mt-6 text-sm font-semibold tracking-wide text-[var(--color-muted)] uppercase">
+                Travel document
+              </h3>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                <Input
+                  label="Passport number"
+                  name={`passengers-${index}-passportNumber`}
+                  data-field={`passengers-${index}-passportNumber`}
+                  value={passenger.passportNumber}
+                  onChange={(event) => updatePassenger(index, "passportNumber", event.target.value)}
+                  error={fieldErrors[`passengers.${index}.passportNumber`]}
+                  autoComplete="off"
+                />
+                <Select
+                  label="Passport issuing country"
+                  name={`passengers-${index}-passportIssuingCountry`}
+                  data-field={`passengers-${index}-passportIssuingCountry`}
+                  options={countryOptions}
+                  value={passenger.passportIssuingCountry}
+                  onChange={(event) =>
+                    updatePassenger(index, "passportIssuingCountry", event.target.value)
+                  }
+                  error={fieldErrors[`passengers.${index}.passportIssuingCountry`]}
+                />
+                <DatePicker
+                  label="Passport expiry date"
+                  name={`passengers-${index}-passportExpiry`}
+                  data-field={`passengers-${index}-passportExpiry`}
+                  value={passenger.passportExpiry}
+                  onChange={(event) => updatePassenger(index, "passportExpiry", event.target.value)}
+                  error={fieldErrors[`passengers.${index}.passportExpiry`]}
+                />
+              </div>
+            </>
+          ) : null}
         </section>
-      ))}
+        );
+      })}
 
       <section className="rounded-xl border border-[var(--color-border)] bg-white p-4 sm:p-5">
         <h2 className="font-display text-xl">Contact information</h2>

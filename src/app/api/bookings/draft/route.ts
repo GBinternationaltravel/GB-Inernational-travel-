@@ -75,7 +75,10 @@ export async function POST(request: Request) {
             : error.code === "EXPIRED"
               ? 410
               : 500;
-      return NextResponse.json({ error: error.message, code: error.code }, { status });
+      return NextResponse.json(
+        { error: error.message, code: error.code, fields: error.fields },
+        { status },
+      );
     }
     return NextResponse.json(
       { error: "We couldn't save your booking right now. Please try again." },

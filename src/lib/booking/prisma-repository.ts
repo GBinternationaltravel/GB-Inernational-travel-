@@ -6,6 +6,23 @@ import type {
   StoredBooking,
 } from "@/lib/booking/repository";
 import type { OfferSnapshot } from "@/lib/booking/pricing";
+import type { PassengerInput } from "@/lib/validations/booking";
+
+function passengerCreateData(passenger: PassengerInput) {
+  return {
+    firstName: passenger.firstName,
+    middleName: passenger.middleName,
+    lastName: passenger.lastName?.trim() || "",
+    dateOfBirth: new Date(`${passenger.dateOfBirth}T12:00:00`),
+    gender: passenger.gender,
+    nationality: passenger.nationality,
+    passportNumber: passenger.passportNumber?.trim() || null,
+    passportIssuingCountry: passenger.passportIssuingCountry?.trim() || null,
+    passportExpiry: passenger.passportExpiry
+      ? new Date(`${passenger.passportExpiry}T12:00:00`)
+      : null,
+  };
+}
 
 function toNumber(value: Prisma.Decimal | number): number {
   return typeof value === "number" ? value : Number(value);
@@ -127,17 +144,7 @@ export class PrismaBookingRepository implements BookingRepository {
           create: input.passengers.map((passenger) => ({
             passengerType: passenger.type,
             passenger: {
-              create: {
-                firstName: passenger.firstName,
-                middleName: passenger.middleName,
-                lastName: passenger.lastName,
-                dateOfBirth: new Date(`${passenger.dateOfBirth}T12:00:00`),
-                gender: passenger.gender,
-                nationality: passenger.nationality,
-                passportNumber: passenger.passportNumber,
-                passportIssuingCountry: passenger.passportIssuingCountry,
-                passportExpiry: new Date(`${passenger.passportExpiry}T12:00:00`),
-              },
+              create: passengerCreateData(passenger),
             },
           })),
         },
@@ -203,17 +210,7 @@ export class PrismaBookingRepository implements BookingRepository {
             create: input.passengers.map((passenger) => ({
               passengerType: passenger.type,
               passenger: {
-                create: {
-                  firstName: passenger.firstName,
-                  middleName: passenger.middleName,
-                  lastName: passenger.lastName,
-                  dateOfBirth: new Date(`${passenger.dateOfBirth}T12:00:00`),
-                  gender: passenger.gender,
-                  nationality: passenger.nationality,
-                  passportNumber: passenger.passportNumber,
-                  passportIssuingCountry: passenger.passportIssuingCountry,
-                  passportExpiry: new Date(`${passenger.passportExpiry}T12:00:00`),
-                },
+                create: passengerCreateData(passenger),
               },
             })),
           },

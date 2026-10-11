@@ -1,6 +1,16 @@
 import { BOOKING_DRAFT_EXPIRY_MINUTES } from "@/config/booking";
-import { bookingDraftSchema, bookingTermsSchema } from "@/lib/validations/booking";
+import {
+  bookingDraftSchema,
+  bookingTermsSchema,
+  collectPassengerIdentityFieldErrors,
+  getBookingFieldErrors,
+} from "@/lib/validations/booking";
 import type { BookingDraftInput } from "@/lib/validations/booking";
+import {
+  isDomesticPakistanItinerary,
+  resolvePassengerIdentityRules,
+  supplierRequiresSurname,
+} from "@/lib/booking/passenger-identity";
 import { getFlightOfferById, revalidateFlightOffer, createSupplierBooking } from "@/services/flight-service";
 import { buildIdempotencyKey } from "@/providers/flights/idempotency";
 import { parseTravelportSession } from "@/providers/flights/travelport-booking";
@@ -32,6 +42,7 @@ export class BookingServiceError extends Error {
       | "INVALID_BOOKING"
       | "DATABASE"
       | "PROVIDER",
+    readonly fields?: Record<string, string>,
   ) {
     super(message);
     this.name = "BookingServiceError";
@@ -48,6 +59,39 @@ function toSafeView(
   store: "prisma" | "file",
 ): SafeBookingView {
   return toSafeBookingView(booking, store);
+}
+
+function assertPassengerIdentityForOffers(
+  input: BookingDraftInput,
+  offer: FlightOffer,
+  returnOffer?: FlightOffer,
+) {
+  const itineraryDomesticPakistan = isDomesticPakistanItinerary({
+    origin: input.origin,
+    destination: input.destination,
+    tripType: input.tripType,
+    outboundOffer: offer,
+    returnOffer,
+  });
+
+  const fields: Record<string, string> = {};
+  for (const [index, passenger] of input.passengers.entries()) {
+    const rules = resolvePassengerIdentityRules({
+      itineraryDomesticPakistan,
+      nationality: passenger.nationality,
+      supplierCode: offer.supplierCode || offer.providerCode,
+      returnSupplierCode: returnOffer?.supplierCode || returnOffer?.providerCode,
+    });
+    Object.assign(fields, collectPassengerIdentityFieldErrors(passenger, rules, index));
+  }
+
+  if (Object.keys(fields).length > 0) {
+    throw new BookingServiceError(
+      Object.values(fields)[0] ?? "Please check the passenger details.",
+      "VALIDATION",
+      fields,
+    );
+  }
 }
 
 async function revalidateStoredOffers(current: StoredBooking) {
@@ -112,6 +156,7 @@ export async function createOrUpdateBookingDraft(
     throw new BookingServiceError(
       parsed.error.issues[0]?.message ?? "Please check the passenger details.",
       "VALIDATION",
+      getBookingFieldErrors(parsed.error),
     );
   }
 
@@ -178,6 +223,8 @@ export async function createOrUpdateBookingDraft(
     }
   }
 
+  assertPassengerIdentityForOffers(input, offer, returnOffer);
+
   let snapshot;
   try {
     snapshot = buildOfferSnapshot(offer, returnOffer);
@@ -219,7 +266,13 @@ export async function createOrUpdateBookingDraft(
     infants: input.infants,
     cabinClass: input.cabinClass,
     expiresAt,
-    passengers: input.passengers,
+    passengers: input.passengers.map((passenger) => ({
+      ...passenger,
+      lastName: passenger.lastName?.trim() ?? "",
+      passportNumber: passenger.passportNumber?.trim() ?? "",
+      passportIssuingCountry: passenger.passportIssuingCountry?.trim() ?? "",
+      passportExpiry: passenger.passportExpiry?.trim() ?? "",
+    })),
   };
 
   try {
@@ -501,6 +554,17 @@ export async function createSupplierReservationForBooking(
     revalidated.snapshot?.supplierSessionRef ??
     current.supplierSessionRef ??
     current.offerSnapshot.supplierSessionRef;
+
+  const supplierCode = current.supplierCode || current.offerSnapshot.supplierCode;
+  if (
+    supplierRequiresSurname(supplierCode) &&
+    current.passengers.some((passenger) => !passenger.lastName?.trim())
+  ) {
+    throw new BookingServiceError(
+      "A surname is required by the selected flight supplier.",
+      "VALIDATION",
+    );
+  }
 
   const result = await createSupplierBooking({
     idempotencyKey: buildIdempotencyKey([

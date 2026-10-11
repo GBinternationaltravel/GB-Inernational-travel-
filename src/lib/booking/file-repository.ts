@@ -76,13 +76,13 @@ function buildStored(
       passengerType: passenger.type,
       firstName: passenger.firstName,
       middleName: passenger.middleName,
-      lastName: passenger.lastName,
+      lastName: passenger.lastName ?? "",
       dateOfBirth: passenger.dateOfBirth,
       gender: passenger.gender,
       nationality: passenger.nationality,
-      passportNumber: passenger.passportNumber,
-      passportIssuingCountry: passenger.passportIssuingCountry,
-      passportExpiry: passenger.passportExpiry,
+      passportNumber: passenger.passportNumber ?? "",
+      passportIssuingCountry: passenger.passportIssuingCountry ?? "",
+      passportExpiry: passenger.passportExpiry ?? "",
     })),
   };
 }
