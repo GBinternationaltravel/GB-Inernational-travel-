@@ -90,6 +90,58 @@ body {
   letter-spacing: -0.02em;
 }
 
+/* Header brand mark only — does not change page headings. */
+.site-brand {
+  display: inline-flex;
+  align-items: baseline;
+  border-bottom: 1px solid color-mix(in srgb, #d9a441 42%, transparent);
+  padding-bottom: 0.1em;
+  font-family: var(--font-brand), "Times New Roman", Times, serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.site-brand-gb {
+  color: #d9a441;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.site-brand-rest {
+  color: #f4efe4;
+  font-weight: 600;
+}
+
+@media (min-width: 640px) {
+  .site-brand {
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-brand {
+    font-size: 1.0625rem;
+    letter-spacing: 0.055em;
+  }
+}
+
+@media (forced-colors: active) {
+  .site-brand {
+    border-bottom-color: CanvasText;
+  }
+
+  .site-brand-gb,
+  .site-brand-rest {
+    color: CanvasText;
+    background: none;
+    -webkit-text-fill-color: unset;
+  }
+}
+
 @layer base {
   h1,
   h2,

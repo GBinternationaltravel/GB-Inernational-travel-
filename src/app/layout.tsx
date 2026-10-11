@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { ToastProvider } from "@/components/ui/toast";
@@ -16,6 +16,13 @@ const inter = Inter({
   adjustFontFallback: true,
 });
 
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-brand",
+  display: "swap",
+  weight: ["600", "700"],
+});
+
 export const metadata: Metadata = buildMetadata({
   title: siteConfig.name,
   description: siteConfig.description,
@@ -29,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${inter.variable} ${playfair.variable} antialiased`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
