@@ -604,7 +604,7 @@ export function BookingReviewClient() {
                 onClick={() => void continueToPayment()}
                 isLoading={submitting || revalidateState.kind === "checking"}
               >
-                Continue to Payment
+                Request booking assistance
               </Button>
               <Link
                 href="/booking/passengers"

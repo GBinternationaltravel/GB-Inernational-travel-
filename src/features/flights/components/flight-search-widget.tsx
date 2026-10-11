@@ -668,7 +668,8 @@ export function FlightSearchWidget({
 
       {!compact ? (
         <Alert variant="info" className="mb-4">
-          Search uses mock development data only. Live airline inventory will be connected later.
+          Search shows flights currently published by GB International Travel. This is not a live
+          airline or GDS connection. Please confirm availability with us before travelling.
         </Alert>
       ) : null}
 

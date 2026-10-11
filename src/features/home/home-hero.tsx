@@ -111,16 +111,16 @@ export function HomeHero() {
               "mt-5 max-w-[22ch] text-[2.375rem] leading-[1.05] sm:mt-6 font-medium tracking-[-0.012em] text-balance text-white [text-shadow:0_2px_28px_rgb(3_10_22/0.35)] sm:text-[3.5rem] lg:max-w-none lg:text-[min(4.25rem,6.6vh)] lg:leading-[1.0]",
             )}
           >
-            Book domestic &amp; international
+            Search domestic &amp; international
             <br className="hidden lg:block" /> air tickets at{" "}
             <br className="hidden lg:block" />
-            <em className="text-[#e6d1a6] italic">fair, honest prices</em>
+            <em className="text-[#e6d1a6] italic">clear PKR fares</em>
           </h1>
 
           <p className="mt-5 max-w-[35rem] text-[0.9375rem] leading-[1.7] text-white/85 sm:mt-6 sm:text-[1.0625rem] sm:font-light sm:text-white/80">
-            A trusted way to fly {inventoryAirlines}: one{" "}
-            <span className="whitespace-nowrap">all-inclusive</span> fare in PKR, with your e-ticket
-            and PNR issued by our team.
+            Search published fares for {inventoryAirlines}. Prices are in PKR and include taxes and
+            our service charge. Our team confirms the booking and issues your e-ticket and PNR after
+            verification.
           </p>
 
           <div className="mt-6 max-w-[36rem] border-l border-[#c9a96e]/70 pl-4 sm:mt-7 sm:pl-5">
@@ -205,8 +205,8 @@ const trustPoints: {
 }[] = [
   {
     icon: ReceiptText,
-    title: "All-inclusive fares",
-    text: "No hidden charges. One clear fare in PKR, taxes included.",
+    title: "Clear PKR fares",
+    text: "The amount shown includes taxes and our service charge. Confirm the fare with us before you travel.",
   },
   {
     icon: MessageCircle,
@@ -217,7 +217,7 @@ const trustPoints: {
   {
     icon: BellRing,
     title: "E-ticket and reminders",
-    text: "Your e-ticket, then reminders 24h, 5h and 3h before departure.",
+    text: "After we issue your e-ticket, we aim to send departure reminders. Please also check your airline’s timings.",
   },
   {
     icon: Compass,

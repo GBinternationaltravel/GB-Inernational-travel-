@@ -89,25 +89,25 @@ export function BookingConfirmationClient() {
           </div>
 
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-[var(--color-navy)]">
-            {paymentReceived ? "Booking confirmed" : "Booking update"}
+            {paymentReceived ? "Payment received" : "Booking request received"}
           </h1>
 
           {paymentReceived ? (
             <>
               <p className="mt-4 text-lg text-[var(--color-ink)]">
-                Payment received successfully. Your booking reference is ready — ticket issuance
-                may still be pending.
+                We have recorded a payment against this booking. Ticket issuance may still be
+                pending.
               </p>
               <Alert variant="warning" className="mt-6" title="Ticket issuance pending">
                 A successful payment does <strong>not</strong> mean an airline ticket has been
                 issued. No PNR, e-ticket number, airline confirmation, or boarding pass is
-                generated until ticketing is completed by GB International Travel.
+                generated until our team issues the ticket manually after confirmation.
               </Alert>
             </>
           ) : (
             <Alert variant="info" className="mt-6">
-              Current booking status is {booking.status}. If you have not completed payment yet,
-              continue from the payment page.
+              Current booking status is {booking.status}. Online card payment is not available
+              yet. Contact our team to confirm this booking request. A request is not a ticket.
             </Alert>
           )}
 
@@ -167,7 +167,7 @@ export function BookingConfirmationClient() {
                 href={`/booking/payment?ref=${encodeURIComponent(booking.reference)}`}
                 className="inline-flex h-11 items-center rounded-[var(--radius-md)] bg-[var(--color-sky)] px-4 text-sm font-semibold text-white"
               >
-                Continue to payment
+                Contact our team
               </Link>
             ) : null}
             <Link

@@ -6,7 +6,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = buildMetadata({
   title: "Domestic & International Air Tickets",
   description:
-    "Book domestic and international air tickets at fair, all-inclusive PKR fares. Fly PIA, airblue, AirSial, Fly Jinnah and Emirates, plus Gilgit-Baltistan tours.",
+    "Search domestic and international air tickets from Pakistan. Published PKR fares from GB International Travel; our team confirms availability and issues tickets.",
   path: "/",
 });
 

@@ -124,7 +124,7 @@ export function HomePage() {
                   href="/flights"
                   className="inline-flex h-12 items-center justify-center rounded-full bg-[#c9a96e] px-7 text-sm font-semibold tracking-[0.02em] text-[#0b1f3a] transition-colors hover:bg-[#d8bd8a] focus-visible:outline-white"
                 >
-                  Book a flight
+                  Search flights
                 </Link>
                 <a
                   href={whatsappHref(siteConfig.contactWhatsApp, "Hi GB International Travel, I'd like help planning a trip.")}

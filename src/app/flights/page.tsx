@@ -5,7 +5,6 @@ import { PageHero } from "@/components/layout/page-shell";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { Alert } from "@/components/ui/alert";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { mockRouteList } from "@/data/mock/flights";
 
 export const metadata: Metadata = buildMetadata({
   title: "Flights",
@@ -18,7 +17,7 @@ export default function FlightsPage() {
     <>
       <PageHero
         title="Flights"
-        description="Search domestic and international flights. Results use clearly labeled mock development data."
+        description="Search domestic and international flights from the inventory we currently publish. Fares and seats are confirmed by our team, not by a live airline connection."
         breadcrumbs={[
           { label: "Home", href: "/" },
           { label: "Flights" },
@@ -35,7 +34,8 @@ export default function FlightsPage() {
           description="Submit a search to open the professional results experience with filters and sorting."
         />
         <Alert variant="info" className="mb-6">
-          Example mock routes include: {mockRouteList.slice(0, 6).join(", ")}, and more.
+          Popular published routes include Islamabad–Skardu, Islamabad–Gilgit, Islamabad–Dubai and
+          others, when those flights are listed.
         </Alert>
         <p className="text-sm text-[var(--color-muted)]">
           Looking for category pages?{" "}

@@ -4,7 +4,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = buildMetadata({
   title: "Deals",
-  description: "Flight deals from Pakistan — available after supplier integration.",
+  description: "Promotional flight deals from GB International Travel, published when available.",
   path: "/deals",
 });
 
@@ -13,15 +13,15 @@ export default function DealsPage() {
     <>
       <PageHero
         title="Travel Deals"
-        description="Verified discounted offers will appear here once live inventory is connected."
+        description="Promotional deals will appear here when we publish them. Until then, search flights or contact us for a fare."
         breadcrumbs={[
           { label: "Home", href: "/" },
           { label: "Deals" },
         ]}
       />
       <ComingSoonPanel
-        title="No live deals yet"
-        description="Coupon and commission models are ready. We will not invent promotional prices."
+        title="No published deals right now"
+        description="We will not invent promotional prices. Search flights or contact us if you would like a fare."
       />
     </>
   );

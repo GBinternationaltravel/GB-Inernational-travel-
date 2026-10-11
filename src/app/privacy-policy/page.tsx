@@ -64,7 +64,7 @@ const sections: LegalSection[] = [
         items={[
           "to create and manage your account;",
           "to handle your booking requests and issue your tickets with the airline;",
-          "to send booking updates, your e-ticket and reminder emails before departure (24 hours, 5 hours and 3 hours before your flight);",
+          "to send booking updates, your e-ticket and courtesy reminder emails before departure when those messages can be sent;",
           "to answer your questions and help with changes, cancellations and refunds;",
           "to keep our website and your account secure and prevent fraud;",
           "to keep records that we are required to keep by law.",
@@ -101,9 +101,10 @@ const sections: LegalSection[] = [
     title: "Payments",
     content: (
       <p>
-        You can pay using the payment methods shown at checkout or as advised by our team. We do not
-        store your full card details on our servers. Where online card payment is offered, card details
-        are handled by the payment provider.
+        Online card payment is not available on this website yet. Our team will tell you the accepted
+        payment methods. We do not store your full card details on our servers. Where online card
+        payment is offered, card details are handled by the payment provider. It is not offered at this
+        time.
       </p>
     ),
   },

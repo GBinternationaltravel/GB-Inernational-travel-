@@ -33,7 +33,7 @@ export function FlightResultCard({
   if (!first || !last) return null;
 
   const airline = first.airline;
-  // Customers see one all-inclusive fare; the GB service fee is never shown separately.
+  // Customers see one published fare; the GB service fee is never shown separately.
   const pricing = calculateOfferPriceSnapshot(offer);
   const displayTotal = priceMode === "leg" ? pricing.supplierFare : pricing.total;
 
@@ -60,8 +60,8 @@ export function FlightResultCard({
             ? "Mock inventory"
             : offer.supplierCode === "INVENTORY"
               ? typeof offer.seatsRemaining === "number" && offer.seatsRemaining <= 5
-                ? `${offer.seatsRemaining} ${offer.seatsRemaining === 1 ? "seat" : "seats"} left`
-                : "Seats available"
+                ? `Up to ${offer.seatsRemaining} ${offer.seatsRemaining === 1 ? "seat" : "seats"} listed — confirm with us`
+                : "Listed in our inventory"
               : "Live pre-production — not a confirmed ticket"}
         </Badge>
       </div>

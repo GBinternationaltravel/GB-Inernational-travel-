@@ -170,11 +170,13 @@ describe("Customer price display (GB service fee folded in)", () => {
   });
 
   it("uses customer wording with no service-fee line or amount", () => {
-    assert.equal(CUSTOMER_FARE_LABEL, "Fare (incl. taxes & fees)");
+    assert.equal(CUSTOMER_FARE_LABEL, "Published fare");
     for (const notice of [customerPricingNotice(true), customerPricingNotice(false)]) {
       assert.doesNotMatch(notice, /service fee|per seat|GB fee|PKR|\d/i);
-      assert.match(notice, /includes all taxes and fees/);
+      assert.match(notice, /confirm the fare|confirmed with our team/i);
     }
+    assert.match(customerPricingNotice(false), /Online card payment is not available/);
+    assert.match(customerPricingNotice(false), /not a ticket/i);
   });
 
   it("sorts cheapest-first by the customer total, not the supplier fare", () => {

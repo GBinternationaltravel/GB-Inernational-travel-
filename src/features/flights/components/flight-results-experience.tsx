@@ -391,8 +391,9 @@ export function FlightResultsExperience({
 
           {supplierCode === "INVENTORY" && !isMock ? (
             <Alert variant="info" className="mb-4">
-              Fares and seats are confirmed by GB International Travel. Your e-ticket is issued
-              after payment is verified.
+              These fares come from the inventory published by GB International Travel. They are not
+              airline-held seats until our team confirms them. Online card payment is not available
+              yet — contact us to request a booking. We issue e-tickets manually after confirmation.
             </Alert>
           ) : (
             <Alert variant="warning" className="mb-4">

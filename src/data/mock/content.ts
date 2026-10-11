@@ -1,7 +1,7 @@
 import type { DestinationSummary, FaqItem } from "@/types/content";
 
 /**
- * Foundation content placeholders.
+ * Public FAQ and destination placeholders.
  * Avoid fabricated company stats, reviews, or live travel facts.
  */
 
@@ -56,16 +56,16 @@ export const popularInternationalDestinations: DestinationSummary[] = [
 export const foundationFaqs: FaqItem[] = [
   {
     id: "faq-1",
-    question: "What can I do on GB International Travel today?",
+    question: "What can I do on this website today?",
     answer:
-      "This foundation phase provides the website structure, search UI shell, and architecture. Live airline booking will be added in later phases.",
+      "You can search flights we currently publish, send a booking request, and contact our team on WhatsApp or phone. We confirm availability and issue tickets manually. Online card payment is not available yet.",
     category: "general",
   },
   {
     id: "faq-2",
-    question: "Are the flight prices on this site live?",
+    question: "Are these airline-confirmed live fares?",
     answer:
-      "No. Current flight results use clearly labeled mock data for development. Real supplier inventory will be connected later.",
+      "No. The fares shown are from the flight inventory currently published by GB International Travel. They are not a live airline or GDS feed. Availability and the final price should be confirmed with our team before a booking is finalized.",
     category: "flights",
   },
   {
@@ -81,5 +81,19 @@ export const foundationFaqs: FaqItem[] = [
     answer:
       "English is the initial language. Urdu and Arabic are planned for future localization phases.",
     category: "general",
+  },
+  {
+    id: "faq-5",
+    question: "Can I pay by card on this website?",
+    answer:
+      "Online card payment is not available yet. Our team will tell you the accepted payment methods after they confirm your flight. A payment is not a confirmed ticket.",
+    category: "payments",
+  },
+  {
+    id: "faq-6",
+    question: "When do I receive my e-ticket?",
+    answer:
+      "We issue e-tickets and airline PNRs manually after we confirm the flight and the booking. A booking request is not a ticket.",
+    category: "flights",
   },
 ];

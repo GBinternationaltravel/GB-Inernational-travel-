@@ -525,7 +525,10 @@ export function PassengerDetailsForm({
             <p className="font-display text-2xl">
               {formatPrice(estimate.total, estimate.currency)}
             </p>
-            <p className="mt-1 text-xs text-[var(--color-muted)]">Includes all taxes and fees.</p>
+            <p className="mt-1 text-xs text-[var(--color-muted)]">
+              Published fare. Confirm the amount with our team. Online card payment is not
+              available yet.
+            </p>
           </div>
           <Button type="submit" size="lg" className="w-full sm:w-auto" isLoading={submitting}>
             Continue to Review

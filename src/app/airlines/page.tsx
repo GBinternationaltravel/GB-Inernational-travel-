@@ -7,7 +7,7 @@ import { airlines } from "@/data/airlines";
 
 export const metadata: Metadata = buildMetadata({
   title: "Airlines",
-  description: "Airline directory architecture for future verified airline profiles.",
+  description: "Airline names that may appear in GB International Travel flight search.",
   path: "/airlines",
 });
 
@@ -16,7 +16,7 @@ export default function AirlinesPage() {
     <>
       <PageHero
         title="Airlines"
-        description="Airline names used in mock search results. Logos are omitted until legitimate assets are available."
+        description="Airline names that may appear in published flight search. Listing an airline is not a partnership claim."
         breadcrumbs={[
           { label: "Home", href: "/" },
           { label: "Airlines" },
@@ -24,7 +24,7 @@ export default function AirlinesPage() {
       />
       <Section>
         <Alert variant="info" className="mb-6">
-          These airlines appear in development mock inventory only.
+          Availability depends on the flights we currently publish. Confirm any fare with our team.
         </Alert>
         <div className="space-y-3">
           {airlines.map((airline) => (

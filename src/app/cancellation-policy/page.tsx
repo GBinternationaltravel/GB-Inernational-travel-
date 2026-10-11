@@ -118,8 +118,9 @@ const sections: LegalSection[] = [
     content: (
       <>
         <p>
-          We send reminder emails 24 hours, 5 hours and 3 hours before departure. Passengers are
-          responsible for:
+          We may send reminder emails before departure as a courtesy. They are not guaranteed for every
+          departure window. Please rely on your e-ticket and the airline&rsquo;s schedule. Passengers
+          are responsible for:
         </p>
         <LegalList
           items={[

@@ -54,7 +54,7 @@ export default async function MyTripsPage() {
                 href="/flights"
                 className="mt-3 inline-flex text-sm font-semibold text-[var(--color-emerald)]"
               >
-                Book a Flight
+                Search flights
               </Link>
             </div>
           ) : (

@@ -79,8 +79,8 @@ export function FlightFareBar({
       </div>
       <p className="border-t border-[var(--color-border)] px-3 py-2 text-xs text-[var(--color-muted)] sm:px-4">
         {isMock
-          ? "Mock inventory estimate only — not live airline fares. The booking total is recalculated on the server."
-          : "Estimated supplier fares. The final booking amount is recalculated on the server before payment."}
+          ? "Development inventory estimate only — not live airline fares. Confirm the amount with our team."
+          : "Estimate from our published inventory. The final amount is confirmed by our team."}
       </p>
     </aside>
   );

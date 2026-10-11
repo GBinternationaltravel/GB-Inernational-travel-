@@ -90,7 +90,7 @@ export function SiteHeader() {
             href="/flights"
             className="inline-flex h-9 items-center rounded-[var(--radius-md)] bg-[var(--color-emerald)] px-3.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-emerald-dark)]"
           >
-            Book a Flight
+            Search Flights
           </Link>
         </div>
 
@@ -173,7 +173,7 @@ export function SiteHeader() {
             className="mt-2 rounded-[var(--radius-md)] bg-[var(--color-emerald)] px-3 py-3 text-center text-sm font-semibold text-white"
             onClick={() => setOpen(false)}
           >
-            Book a Flight
+            Search Flights
           </Link>
         </Container>
       </div>

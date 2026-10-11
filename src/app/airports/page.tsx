@@ -7,7 +7,7 @@ import { airports } from "@/data/airports";
 
 export const metadata: Metadata = buildMetadata({
   title: "Airports",
-  description: "Airport reference list used during foundation development.",
+  description: "Airport codes and cities used in GB International Travel flight search.",
   path: "/airports",
 });
 
@@ -16,7 +16,7 @@ export default function AirportsPage() {
     <>
       <PageHero
         title="Airports"
-        description="Reference airports for search UI development. Expanded airport content comes later."
+        description="Airport codes and cities you can use when searching published flights."
         breadcrumbs={[
           { label: "Home", href: "/" },
           { label: "Airports" },
@@ -24,7 +24,8 @@ export default function AirportsPage() {
       />
       <Section>
         <Alert variant="info" className="mb-6">
-          Codes and public airport names below are for development reference only.
+          These are public airport names and IATA codes used in search. Listing an airport does not
+          mean a flight is available until our team confirms it.
         </Alert>
         <div className="space-y-4">
           {airports.map((airport) => (

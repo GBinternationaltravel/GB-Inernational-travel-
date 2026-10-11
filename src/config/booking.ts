@@ -8,7 +8,7 @@ export const bookingProgressSteps = [
   { id: 2, key: "flight", label: "Flight", href: "/flights/results" },
   { id: 3, key: "passenger", label: "Passenger", href: "/booking/passengers" },
   { id: 4, key: "review", label: "Review", href: "/booking/review" },
-  { id: 5, key: "payment", label: "Payment", href: "/booking/payment" },
+  { id: 5, key: "payment", label: "Contact", href: "/booking/payment" },
   { id: 6, key: "confirmation", label: "Confirmation", href: null },
 ] as const;
 

@@ -28,7 +28,7 @@ export default function FaqPage() {
       />
       <PageHero
         title="FAQ"
-        description="Answers about the current foundation phase."
+        description="Answers about searching flights, booking requests, payments and ticket issuance."
         breadcrumbs={[
           { label: "Home", href: "/" },
           { label: "FAQ" },

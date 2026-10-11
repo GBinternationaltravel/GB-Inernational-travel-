@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { MessageCircle, Phone } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Container } from "@/components/ui/container";
@@ -13,6 +13,8 @@ import { BookingProgress } from "@/features/booking/booking-progress";
 import { formatPrice } from "@/lib/flights/filter-sort";
 import type { SafeBookingView } from "@/types/booking";
 import { CUSTOMER_FARE_LABEL } from "@/lib/booking/customer-price";
+import { siteConfig } from "@/config/site";
+import { telHref, whatsappHref } from "@/lib/contact-links";
 
 export function BookingPaymentClient() {
   const searchParams = useSearchParams();
@@ -21,7 +23,6 @@ export function BookingPaymentClient() {
   const [booking, setBooking] = useState<SafeBookingView | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,40 +63,13 @@ export function BookingPaymentClient() {
     };
   }, [reference, router]);
 
-  async function startCheckout() {
-    if (!booking) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/payments/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reference: booking.reference }),
-      });
-      const data = (await response.json()) as {
-        redirectUrl?: string;
-        error?: string;
-        payment?: { isMock?: boolean };
-      };
-      if (!response.ok || !data.redirectUrl) {
-        setError(data.error ?? "We couldn't start checkout.");
-        setSubmitting(false);
-        return;
-      }
-      window.location.href = data.redirectUrl;
-    } catch {
-      setError("We couldn't start checkout right now.");
-      setSubmitting(false);
-    }
-  }
-
-  if (!ready) return <LoadingState label="Loading payment…" />;
+  if (!ready) return <LoadingState label="Loading booking request…" />;
 
   if (!booking) {
     return (
       <Container className="py-10">
         <ErrorState
-          title="We couldn't load this booking for payment."
+          title="We couldn't load this booking request."
           description={error ?? "Please return to review or start a new search."}
           action={
             <Link
@@ -110,25 +84,28 @@ export function BookingPaymentClient() {
     );
   }
 
+  const assistanceMessage = `Hi GB International Travel, I would like help with booking ${booking.reference}.`;
+
   return (
     <div className="pb-10">
       <Container className="py-6">
         <BookingProgress current="payment" reference={booking.reference} />
         <div className="mt-6 max-w-xl">
           <div className="mb-4 flex flex-wrap items-center gap-3">
-            <h1 className="font-display text-3xl">Payment</h1>
-            <Badge variant="info">Secure checkout</Badge>
+            <h1 className="font-display text-3xl">Booking request</h1>
+            <Badge variant="info">Payment by arrangement</Badge>
           </div>
 
-          <Alert variant="info" className="mb-6">
-            Amount is taken from your stored booking total on the server. No card
-            details are collected on this page.
+          <Alert variant="warning" className="mb-6">
+            Online card payment is not available on this website yet. Paying later, or sending
+            payment as our team advises, does not issue a ticket. Our staff issue tickets manually
+            after they confirm the flight.
           </Alert>
 
           <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
             <p className="text-sm text-[var(--color-muted)]">Booking reference</p>
             <p className="font-display text-2xl">{booking.reference}</p>
-            <p className="mt-4 text-sm text-[var(--color-muted)]">Amount due</p>
+            <p className="mt-4 text-sm text-[var(--color-muted)]">Published fare to confirm</p>
             <p className="font-display text-3xl">
               {formatPrice(booking.totalAmount, booking.currency)}
             </p>
@@ -137,13 +114,13 @@ export function BookingPaymentClient() {
               booking.offer.returnSupplierFare != null ? (
                 <>
                   <div className="flex justify-between gap-3">
-                    <dt>Outbound supplier fare</dt>
+                    <dt>Outbound published fare</dt>
                     <dd>
                       {formatPrice(booking.offer.outboundSupplierFare, booking.currency)}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <dt>Return supplier fare</dt>
+                    <dt>Return published fare</dt>
                     <dd>
                       {formatPrice(booking.offer.returnSupplierFare, booking.currency)}
                     </dd>
@@ -158,10 +135,9 @@ export function BookingPaymentClient() {
             <Alert variant="warning" className="mt-4">
               {booking.pricingNotice}
             </Alert>
-            <Alert variant="warning" className="mt-3">
-              Paying does not issue an airline ticket. After a successful payment your
-              booking stays awaiting ticket confirmation until a live supplier
-              integration confirms issuance.
+            <Alert variant="info" className="mt-3">
+              Contact our team to confirm availability and the accepted payment method. A booking
+              request is not a confirmed ticket.
             </Alert>
 
             {error ? (
@@ -170,15 +146,24 @@ export function BookingPaymentClient() {
               </Alert>
             ) : null}
 
-            <Button
-              type="button"
-              size="lg"
-              className="mt-6 w-full"
-              disabled={submitting}
-              onClick={() => void startCheckout()}
-            >
-              {submitting ? "Starting checkout…" : "Complete Payment"}
-            </Button>
+            <div className="mt-6 flex flex-col gap-3">
+              <a
+                href={whatsappHref(siteConfig.contactWhatsApp, assistanceMessage)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-emerald)] px-4 text-sm font-semibold text-white"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden />
+                WhatsApp {siteConfig.contactWhatsApp}
+              </a>
+              <a
+                href={telHref(siteConfig.contactPhone)}
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-sm font-semibold text-[var(--color-navy)] hover:bg-[var(--color-surface-muted)]"
+              >
+                <Phone className="h-4 w-4" aria-hidden />
+                Call {siteConfig.contactPhone}
+              </a>
+            </div>
 
             <Link
               href={`/booking/review?ref=${encodeURIComponent(booking.reference)}`}

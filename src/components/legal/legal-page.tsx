@@ -6,7 +6,7 @@ import { siteConfig } from "@/config/site";
 import { mailtoHref, telHref, whatsappHref } from "@/lib/contact-links";
 
 /** Date shown as "Last updated" on every policy page. */
-export const LEGAL_LAST_UPDATED = "4 October 2026";
+export const LEGAL_LAST_UPDATED = "11 October 2026";
 
 export type LegalSection = {
   id: string;

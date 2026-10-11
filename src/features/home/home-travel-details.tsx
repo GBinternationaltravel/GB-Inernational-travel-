@@ -54,7 +54,7 @@ const details: DetailItem[] = [
     id: "e-ticket",
     icon: Ticket,
     label: "E-ticket & reminders",
-    text: "Our team issues your e-ticket and airline PNR once your booking is confirmed, and you can view your trip in My Trips. We also send reminders 24 hours, 5 hours and 3 hours before departure.",
+    text: "Our team issues your e-ticket and airline PNR manually after we confirm the flight and receive the agreed payment. You can view your trip in My Trips. Reminder emails are a courtesy and may not cover every departure window.",
     links: [{ href: "/my-trips", label: "My Trips" }],
   },
   {

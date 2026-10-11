@@ -101,9 +101,9 @@ const sections: LegalSection[] = [
       <LegalList
         items={[
           "Prices are shown in Pakistani Rupees (PKR).",
-          "The fare shown for a flight is one all-inclusive price that includes applicable taxes and charges, unless clearly stated otherwise.",
-          "Prices can change until your ticket is issued, because airlines change fares and availability in real time.",
-          "You can pay using the payment methods shown at checkout or as advised by our team. Your booking is confirmed by our team when your ticket is issued, not at the moment of payment.",
+          "The fare shown for a flight includes applicable taxes and our service charge, unless clearly stated otherwise. Please confirm the fare with us before you pay.",
+          "Prices and availability can change until our team issues your ticket. Please confirm the fare with us before you pay.",
+          "Online card payment is not available on this website yet. Our team will tell you the accepted payment methods. A payment is not a confirmed ticket. Your booking is confirmed by our team when your ticket is issued.",
           "We do not store your full card details on our servers.",
         ]}
       />
@@ -124,10 +124,11 @@ const sections: LegalSection[] = [
           ]}
         />
         <p>
-          We send reminder emails 24 hours, 5 hours and 3 hours before departure as a courtesy. They do
-          not replace your own responsibility to check your flight and reach the airport on time. If you
-          are refused boarding or entry because of missing or invalid documents, or you miss your flight
-          by arriving late, the airline&rsquo;s fare rules apply and we cannot refund costs that the
+          We may send reminder emails before departure as a courtesy. They are not guaranteed for every
+          departure window and do not replace your own responsibility to check your flight and reach the
+          airport on time. Please rely on your e-ticket and the airline&rsquo;s schedule. If you are
+          refused boarding or entry because of missing or invalid documents, or you miss your flight by
+          arriving late, the airline&rsquo;s fare rules apply and we cannot refund costs that the
           airline does not refund.
         </p>
       </>

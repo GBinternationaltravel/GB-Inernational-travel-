@@ -46,8 +46,8 @@ export function HomePopularRoutes() {
             Popular routes
           </h2>
           <p className="mt-4 text-[0.9375rem] leading-relaxed text-[var(--color-muted)]">
-            Choose a route, add your dates and see the all-inclusive fare in PKR. Our team issues
-            your ticket and stays with you on WhatsApp.
+            Choose a route, add your dates and view the published fare in PKR. Our team confirms the
+            booking and issues the ticket after verification.
           </p>
         </div>
 
