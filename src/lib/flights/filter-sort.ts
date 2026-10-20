@@ -65,6 +65,7 @@ export function sortOffers(
     case "cheapest":
       return copy.sort((a, b) => totalOf(a) - totalOf(b));
     case "fastest":
+    case "shortest":
       return copy.sort((a, b) => a.durationMinutes - b.durationMinutes);
     case "earliest_departure":
       return copy.sort((a, b) => {

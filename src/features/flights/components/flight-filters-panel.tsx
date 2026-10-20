@@ -43,6 +43,20 @@ export function FlightFiltersPanel({
   onClear: () => void;
 }) {
   const airlineIds = Array.from(new Set(offers.map((offer) => offer.airlineId)));
+  const stopCounts = new Set(offers.map((offer) => offer.stops));
+  const departureBucketsPresent = new Set(
+    offers
+      .map((offer) => offer.segments[0]?.departureAt)
+      .filter((value): value is string => Boolean(value))
+      .map((value) => {
+        const hour = new Date(value).getHours();
+        if (hour >= 5 && hour < 8) return "early_morning";
+        if (hour >= 8 && hour < 12) return "morning";
+        if (hour >= 12 && hour < 17) return "afternoon";
+        if (hour >= 17 && hour < 21) return "evening";
+        return "night";
+      }),
+  );
   // Customer totals (fee included) — the same prices shown on the result cards.
   const customerTotals = offers.map((o) => customerOfferTotal(o));
   const priceFloor = customerTotals.length ? Math.min(...customerTotals) : 0;
@@ -90,16 +104,19 @@ export function FlightFiltersPanel({
         </div>
       </FilterGroup>
 
-      <FilterGroup title="Stops">
-        <CheckboxList
-          options={stopOptions}
-          values={filters.stops}
-          onToggle={(value) =>
-            onChange({ ...filters, stops: toggleValue(filters.stops, value) })
-          }
-        />
-      </FilterGroup>
+      {stopCounts.size > 1 ? (
+        <FilterGroup title="Stops">
+          <CheckboxList
+            options={stopOptions}
+            values={filters.stops}
+            onToggle={(value) =>
+              onChange({ ...filters, stops: toggleValue(filters.stops, value) })
+            }
+          />
+        </FilterGroup>
+      ) : null}
 
+      {departureBucketsPresent.size > 1 ? (
       <FilterGroup title="Departure time">
         <CheckboxList
           options={timeOptions}
@@ -112,6 +129,7 @@ export function FlightFiltersPanel({
           }
         />
       </FilterGroup>
+      ) : null}
 
       <FilterGroup title="Arrival time">
         <CheckboxList
@@ -171,7 +189,8 @@ export function FlightFiltersPanel({
         <div className="space-y-2">
           {airlineIds.map((id) => {
             const airline = getAirlineById(id);
-            if (!airline) return null;
+            const fromOffer = offers.find((offer) => offer.airlineId === id)?.segments[0]?.airline;
+            const name = airline?.name || fromOffer?.name || id.toUpperCase();
             return (
               <label key={id} className="flex items-center gap-2 text-sm">
                 <input
@@ -185,7 +204,7 @@ export function FlightFiltersPanel({
                   }
                   className="h-4 w-4 rounded border-[var(--color-border)]"
                 />
-                {airline.name}
+                {name}
               </label>
             );
           })}

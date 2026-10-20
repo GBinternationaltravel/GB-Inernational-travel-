@@ -14,12 +14,18 @@ export function FlightFareBar({
   inbound,
   currency = "PKR",
   showReturn,
-  isMock = true,
+  seats = 1,
+  infantFare = 0,
 }: {
   outbound: FareBarLeg;
   inbound?: FareBarLeg | null;
   currency?: string;
   showReturn: boolean;
+  /** Adults + children. Pass supplier fares in `fare`; the total adds the agency amount once. */
+  seats?: number;
+  /** Infant portion of the supplier fare, so the fee uses the same rule as the result cards. */
+  infantFare?: number;
+  /** @deprecated Kept so older callers compile. The bar no longer mentions mock inventory. */
   isMock?: boolean;
 }) {
   const outboundFare = outbound.fare;
@@ -27,7 +33,10 @@ export function FlightFareBar({
   const combined =
     (outboundFare ?? 0) + (showReturn ? (inboundFare ?? 0) : 0);
   const hasAnyFare = outboundFare != null || (showReturn && inboundFare != null);
-  const estimated = hasAnyFare ? calculateAgencyMarkup(combined) : null;
+  const estimated = hasAnyFare
+    ? calculateAgencyMarkup(combined, { seats, infantFare })
+    : null;
+  const customerTotal = estimated?.customerTotal ?? null;
 
   return (
     <aside
@@ -45,7 +54,6 @@ export function FlightFareBar({
           origin={outbound.origin}
           destination={outbound.destination}
           fare={outboundFare}
-          currency={currency}
           selected={outbound.selected}
         />
         {showReturn ? (
@@ -55,7 +63,6 @@ export function FlightFareBar({
             origin={inbound?.origin ?? ""}
             destination={inbound?.destination ?? ""}
             fare={inboundFare}
-            currency={currency}
             selected={inbound?.selected}
           />
         ) : null}
@@ -64,23 +71,18 @@ export function FlightFareBar({
             Total
           </p>
           <p className="mt-1 font-display text-xl text-[var(--color-navy)] tabular-nums">
-            {hasAnyFare ? formatPrice(combined, currency) : "—"}
+            {customerTotal != null ? formatPrice(customerTotal, currency) : "—"}
           </p>
-          {estimated ? (
-            <p className="mt-1 text-xs text-[var(--color-muted)]">
-              Est. with GB fee {formatPrice(estimated.customerTotal, currency)}
-            </p>
-          ) : (
-            <p className="mt-1 text-xs text-[var(--color-muted)]">
-              Select flights to see the combined fare
-            </p>
-          )}
+          <p className="mt-1 text-xs text-[var(--color-muted)]">
+            {customerTotal != null
+              ? "Indicative published fare, confirmed when you request a booking."
+              : "Select flights to see the published fare."}
+          </p>
         </div>
       </div>
       <p className="border-t border-[var(--color-border)] px-3 py-2 text-xs text-[var(--color-muted)] sm:px-4">
-        {isMock
-          ? "Development inventory estimate only — not live airline fares. Confirm the amount with our team."
-          : "Estimate from our published inventory. The final amount is confirmed by our team."}
+        Fares are indicative and are confirmed on booking. They are not live airline prices, and a
+        request is not a ticket.
       </p>
     </aside>
   );
@@ -92,7 +94,6 @@ function FareBarCell({
   origin,
   destination,
   fare,
-  currency,
   selected,
 }: {
   label: string;
@@ -100,7 +101,6 @@ function FareBarCell({
   origin: string;
   destination: string;
   fare: number | null;
-  currency: string;
   selected?: boolean;
 }) {
   return (
@@ -115,8 +115,8 @@ function FareBarCell({
       <p className="text-sm font-semibold text-[var(--color-sky)]">
         {origin && destination ? `${origin} → ${destination}` : "—"}
       </p>
-      <p className="mt-1 font-display text-lg text-[var(--color-navy)] tabular-nums">
-        {fare != null ? formatPrice(fare, currency) : "—"}
+      <p className="mt-1 text-xs text-[var(--color-muted)]">
+        {fare != null ? "Included in the total" : "No published fare for this leg"}
       </p>
     </div>
   );

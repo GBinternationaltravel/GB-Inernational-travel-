@@ -523,6 +523,8 @@ export function CreateBookingForm() {
                 : null
             }
             showReturn={tripType === "ROUND_TRIP"}
+            seats={adults + children}
+            infantFare={(outbound.infantFareTotal ?? 0) + (inbound?.infantFareTotal ?? 0)}
             isMock={outbound.isMock || Boolean(inbound?.isMock)}
           />
 

@@ -91,7 +91,7 @@ function HeroBackground() {
   );
 }
 
-export function HomeHero() {
+export function HomeHero({ faresUpdatedAt = null }: { faresUpdatedAt?: string | null }) {
   return (
     <section aria-labelledby="home-hero-title" className="relative bg-white">
       <div className="relative isolate -mt-14 flex min-h-0 flex-col overflow-hidden bg-[#071428] text-white sm:min-h-[640px] lg:-mt-16 lg:min-h-[max(680px,90vh)]">
@@ -225,7 +225,7 @@ export function HomeHero() {
       </div>
 
       <Container className="relative z-10 -mt-2 sm:-mt-[10.5rem] lg:-mt-[14rem]">
-        <HomeHeroSearch />
+        <HomeHeroSearch faresUpdatedAt={faresUpdatedAt} />
       </Container>
     </section>
   );

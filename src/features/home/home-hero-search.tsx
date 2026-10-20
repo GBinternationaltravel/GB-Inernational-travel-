@@ -10,6 +10,7 @@ import {
 } from "@/features/flights/components/flight-search-widget";
 import { homeDisplayFont } from "@/features/home/home-fonts";
 import { HomeTravelDetails } from "@/features/home/home-travel-details";
+import { FaresUpdatedLine } from "@/components/flights/fares-updated-line";
 import { whatsappHref } from "@/lib/contact-links";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +38,11 @@ const popularRoutes: readonly PopularRoute[] = [
 ];
 
 /** Client island: Flights / Tours / Visa search panel that overlaps the home hero. */
-export function HomeHeroSearch() {
+export function HomeHeroSearch({
+  faresUpdatedAt = null,
+}: {
+  faresUpdatedAt?: string | null;
+}) {
   const [heroTab, setHeroTab] = useState<HeroTab>("flights");
   const baseId = useId();
   const tabRefs = useRef<Record<HeroTab, HTMLButtonElement | null>>({
@@ -153,6 +158,9 @@ export function HomeHeroSearch() {
             whatsappText="Hi GB International Travel, I have a question about a visa."
           />
         </div>
+      </div>
+      <div className="mt-3 px-1">
+        <FaresUpdatedLine updatedAt={faresUpdatedAt} />
       </div>
     </div>
   );

@@ -233,10 +233,20 @@ export function getAirportByCode(code: string): AirportSummary | undefined {
   return airportByCode.get(code.toUpperCase());
 }
 
+/** Airports we actually sell or that travellers ask for first. */
+const popularAirportCodes = ["ISB", "KHI", "LHE", "KDU", "GIL", "PEW", "DXB", "JED"];
+
 export function searchAirports(query: string, limit = 8): AirportSummary[] {
   const normalized = query.trim().toLowerCase();
   if (!normalized) {
-    return airports.slice(0, limit);
+    const popular = popularAirportCodes
+      .map((code) => airportByCode.get(code))
+      .filter((airport): airport is AirportSummary => Boolean(airport));
+    const popularSet = new Set(popular.map((airport) => airport.iataCode));
+    const pakistan = airports.filter(
+      (airport) => airport.country === "Pakistan" && !popularSet.has(airport.iataCode),
+    );
+    return [...popular, ...pakistan].slice(0, limit);
   }
 
   const scored = airports
@@ -260,7 +270,13 @@ export function searchAirports(query: string, limit = 8): AirportSummary[] {
       return { airport, score };
     })
     .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score || a.airport.city.localeCompare(b.airport.city));
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      const aHome = a.airport.country === "Pakistan" ? 1 : 0;
+      const bHome = b.airport.country === "Pakistan" ? 1 : 0;
+      if (aHome !== bHome) return bHome - aHome;
+      return a.airport.city.localeCompare(b.airport.city);
+    });
 
   return scored.slice(0, limit).map((item) => item.airport);
 }

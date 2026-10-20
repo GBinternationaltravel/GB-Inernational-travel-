@@ -3,6 +3,7 @@ import {
   flightSearchSchema,
   type FlightSearchInput,
 } from "@/lib/validations/flight";
+import { addIsoDays, defaultTravelDates } from "@/lib/flights/default-dates";
 
 /** Canonical public URL parameter names for shareable flight searches. */
 export const searchParamKeys = {
@@ -56,12 +57,13 @@ export type SearchFormValues = {
 };
 
 export function defaultSearchFormValues(): SearchFormValues {
+  const dates = defaultTravelDates();
   return {
     tripType: "ROUND_TRIP",
     origin: "ISB",
     destination: "DXB",
-    departureDate: "",
-    returnDate: "",
+    departureDate: dates.departureDate,
+    returnDate: dates.returnDate,
     adults: 1,
     children: 0,
     infants: 0,
@@ -108,12 +110,22 @@ export function parseSearchParams(
   const tripRaw = readParam(source, searchParamKeys.trip)?.toLowerCase();
   const cabinRaw = readParam(source, searchParamKeys.cabin)?.toLowerCase();
 
+  const tripType = (tripRaw && paramToTrip[tripRaw]) || defaults.tripType;
+  const departureDate = readParam(source, searchParamKeys.departure) || defaults.departureDate;
+  let returnDate = readParam(source, searchParamKeys.return) ?? "";
+  if (tripType !== "ROUND_TRIP") {
+    returnDate = "";
+  } else if (!returnDate) {
+    returnDate =
+      defaults.returnDate > departureDate ? defaults.returnDate : addIsoDays(departureDate, 7);
+  }
+
   return {
-    tripType: (tripRaw && paramToTrip[tripRaw]) || defaults.tripType,
+    tripType,
     origin: (readParam(source, searchParamKeys.from) ?? defaults.origin).toUpperCase(),
     destination: (readParam(source, searchParamKeys.to) ?? defaults.destination).toUpperCase(),
-    departureDate: readParam(source, searchParamKeys.departure) ?? "",
-    returnDate: readParam(source, searchParamKeys.return) ?? "",
+    departureDate,
+    returnDate,
     adults: Number(readParam(source, searchParamKeys.adults) ?? defaults.adults) || 1,
     children: Number(readParam(source, searchParamKeys.children) ?? 0) || 0,
     infants: Number(readParam(source, searchParamKeys.infants) ?? 0) || 0,

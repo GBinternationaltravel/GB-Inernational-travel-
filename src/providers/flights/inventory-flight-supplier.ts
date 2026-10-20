@@ -363,6 +363,7 @@ async function buildOffer(options: {
       // Lets the GB service fee be charged per seat (adults + children, not infants).
       pricedPassengers: { adults: pax.adults, children: pax.children, infants: pax.infants },
       infantFareTotal,
+      fareUpdatedAt: flight.updatedAt.toISOString(),
       changeable: null,
       fareRules:
         meta.fareNotes ??
@@ -392,6 +393,23 @@ async function loadOfferFromId(internalOfferId: string): Promise<{
     tripType: "ONE_WAY",
   });
   return { parsed, result };
+}
+
+/** Latest saved time on a published inventory flight. Null when the database has no rows or is unavailable. */
+export async function getPublishedFaresUpdatedAt(): Promise<string | null> {
+  try {
+    const row = await prisma.flight.findFirst({
+      where: {
+        providerCode: INVENTORY_SUPPLIER_CODE,
+        status: { not: "CANCELLED" },
+      },
+      orderBy: { updatedAt: "desc" },
+      select: { updatedAt: true },
+    });
+    return row?.updatedAt.toISOString() ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function asSupplierUnavailable(error: unknown): never {

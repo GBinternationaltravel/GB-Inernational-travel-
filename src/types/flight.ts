@@ -76,6 +76,8 @@ export interface FlightOffer {
   pricedPassengers?: PricedPassengers | null;
   /** Portion of `totalPrice` that belongs to infants (lap, no seat). No GB fee on it. */
   infantFareTotal?: number | null;
+  /** When the published fare row was last saved. Absent when the supplier has no such field. */
+  fareUpdatedAt?: string | null;
 }
 
 export interface PricedPassengers {
@@ -134,6 +136,7 @@ export type FlightSortOption =
   | "recommended"
   | "cheapest"
   | "fastest"
+  | "shortest"
   | "earliest_departure"
   | "latest_arrival";
 
