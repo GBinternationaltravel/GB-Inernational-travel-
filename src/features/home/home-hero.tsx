@@ -238,25 +238,25 @@ const trustPoints: {
   href?: string;
 }[] = [
   {
-    icon: ReceiptText,
-    title: "Clear PKR fares",
-    text: "The amount shown includes taxes and our service charge. Confirm the fare with us before you travel.",
-  },
-  {
     icon: MessageCircle,
     title: "Real people on WhatsApp",
-    text: `Speak to our team directly on ${siteConfig.contactWhatsApp}.`,
+    text: `Message ${siteConfig.contactWhatsAppLabel} ${siteConfig.contactWhatsApp}. A person on our team replies.`,
     href: whatsappHref(siteConfig.contactWhatsApp, whatsappMessage),
   },
   {
+    icon: ReceiptText,
+    title: "Clear PKR fares",
+    text: "Published fares are in PKR. The figure is the amount to confirm with us. It is not a live airline price.",
+  },
+  {
     icon: BellRing,
-    title: "E-ticket and reminders",
-    text: "After we issue your e-ticket, we aim to send departure reminders. Please also check your airline’s timings.",
+    title: "Manual verification before ticketing",
+    text: "We check availability and the fare before an e-ticket is issued. A search result is not a ticket.",
   },
   {
     icon: Compass,
-    title: "Flights, tours and visas",
-    text: "Domestic and international flights, Northern tours and visa help.",
+    title: siteConfig.responseTime,
+    text: "This is the reply time the owner still needs to confirm. Until then it stays a placeholder.",
   },
 ];
 

@@ -144,12 +144,16 @@ export default function CancellationPolicyPage() {
       description="How to cancel or change your booking, and what airline rules and charges apply."
       path="/cancellation-policy"
       intro={
-        <p>
-          Plans change. This policy explains how cancellations and changes work for bookings made with GB
-          International Travel. It should be read with our{" "}
-          <LegalLink href="/refund-policy">Refund Policy</LegalLink> and{" "}
-          <LegalLink href="/terms">Terms &amp; Conditions</LegalLink>.
-        </p>
+        <>
+          <p>
+            Suggested wording for the owner to confirm. Do not treat the day counts below as a
+            promised timetable until the owner publishes them. Contact us before you cancel.
+          </p>
+          <p>
+            Read this with our <LegalLink href="/refund-policy">Refund Policy</LegalLink> and{" "}
+            <LegalLink href="/terms">Terms &amp; Conditions</LegalLink>.
+          </p>
+        </>
       }
       sections={sections}
     />

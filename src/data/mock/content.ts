@@ -56,44 +56,44 @@ export const popularInternationalDestinations: DestinationSummary[] = [
 export const foundationFaqs: FaqItem[] = [
   {
     id: "faq-1",
-    question: "What can I do on this website today?",
+    question: "What happens after I send a booking request?",
     answer:
-      "You can search flights we currently publish, send a booking request, and contact our team on WhatsApp or phone. We confirm availability and issue tickets manually. Online card payment is not available yet.",
-    category: "general",
+      "Our team checks the flight and the published fare, then contacts you. The request is not a ticket and it does not hold a seat by itself.",
+    category: "flights",
   },
   {
     id: "faq-2",
-    question: "Are these airline-confirmed live fares?",
+    question: "Is the price on the website the final price?",
     answer:
-      "No. The fares shown are from the flight inventory currently published by GB International Travel. They are not a live airline or GDS feed. Availability and the final price should be confirmed with our team before a booking is finalized.",
+      "The price is a published PKR fare, including the amount we add for the booking. It is confirmed before ticketing. It is not a live airline fare.",
     category: "flights",
   },
   {
     id: "faq-3",
-    question: "Which currency will bookings use?",
+    question: "Can I pay by card on this website?",
     answer:
-      "The primary market currency is Pakistani Rupee (PKR). Additional currencies may be supported later.",
+      "Online card payment is not available. After we confirm the flight, we tell you how to pay. A payment is not a ticket until the e-ticket is issued.",
     category: "payments",
   },
   {
     id: "faq-4",
-    question: "Will Urdu and Arabic be supported?",
+    question: "When do I receive the e-ticket?",
     answer:
-      "English is the initial language. Urdu and Arabic are planned for future localization phases.",
-    category: "general",
+      "We issue the e-ticket manually after the flight and the fare are confirmed. You will receive it from our team, not at the moment you submit the form.",
+    category: "flights",
   },
   {
     id: "faq-5",
-    question: "Can I pay by card on this website?",
+    question: "What if I need to change or cancel?",
     answer:
-      "Online card payment is not available yet. Our team will tell you the accepted payment methods after they confirm your flight. A payment is not a confirmed ticket.",
-    category: "payments",
+      "Contact us before you travel. Airline fare rules decide what can be changed or refunded after a ticket is issued. Ask us to check your ticket rather than assuming a refund amount.",
+    category: "flights",
   },
   {
     id: "faq-6",
-    question: "When do I receive my e-ticket?",
+    question: "Which currency do you quote?",
     answer:
-      "We issue e-tickets and airline PNRs manually after we confirm the flight and the booking. A booking request is not a ticket.",
-    category: "flights",
+      "Published fares are in Pakistani rupees (PKR) for the Pakistan market.",
+    category: "payments",
   },
 ];
