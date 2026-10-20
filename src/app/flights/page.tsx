@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FlightSearchWidget } from "@/features/flights/components/flight-search-widget";
+import { FaresUpdatedLine } from "@/components/flights/fares-updated-line";
 import { PageHero } from "@/components/layout/page-shell";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { Alert } from "@/components/ui/alert";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { getPublishedFaresUpdatedAt } from "@/providers/flights/inventory-flight-supplier";
 
 export const metadata: Metadata = buildMetadata({
   title: "Flights",
@@ -12,7 +14,11 @@ export const metadata: Metadata = buildMetadata({
   path: "/flights",
 });
 
-export default function FlightsPage() {
+export const revalidate = 3600;
+
+export default async function FlightsPage() {
+  const faresUpdatedAt = await getPublishedFaresUpdatedAt();
+
   return (
     <>
       <PageHero
@@ -25,7 +31,10 @@ export default function FlightsPage() {
       />
 
       <Section>
-        <FlightSearchWidget />
+        <FaresUpdatedLine updatedAt={faresUpdatedAt} />
+        <div className="mt-4">
+          <FlightSearchWidget />
+        </div>
       </Section>
 
       <Section className="bg-white/60">

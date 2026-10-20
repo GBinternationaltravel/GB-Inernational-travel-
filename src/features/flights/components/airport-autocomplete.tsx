@@ -144,6 +144,7 @@ export function AirportAutocomplete({
                   id={`${listboxId}-${airport.iataCode}`}
                   role="option"
                   aria-selected={active}
+                  aria-label={`${airport.city}, ${airport.name}, ${airport.iataCode}`}
                   className={cn(
                     "cursor-pointer px-3 py-2",
                     active ? "bg-[var(--color-surface-muted)]" : "hover:bg-[var(--color-surface-muted)]",

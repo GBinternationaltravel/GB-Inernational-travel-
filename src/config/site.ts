@@ -1,21 +1,36 @@
 import { getPublicAppUrl } from "@/config/app-url";
 
+/** Public brand. Use this everywhere a customer can see the company name. */
+export const brandName = "GB International Travel";
+
+/** Blank env values must not wipe the public fallback (a set-but-empty string is not "missing"). */
+function envOr(value: string | undefined, fallback: string): string {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : fallback;
+}
+
 export const siteConfig = {
-  name: "GB International Travel",
-  shortName: "GB Travel",
+  name: brandName,
+  shortName: brandName,
   description:
     "Pakistan-based travel and flight booking portal for domestic and international journeys.",
   url: getPublicAppUrl(),
-  locale: process.env.NEXT_PUBLIC_DEFAULT_LOCALE ?? "en",
-  currency: process.env.NEXT_PUBLIC_DEFAULT_CURRENCY ?? "PKR",
+  locale: envOr(process.env.NEXT_PUBLIC_DEFAULT_LOCALE, "en"),
+  currency: envOr(process.env.NEXT_PUBLIC_DEFAULT_CURRENCY, "PKR"),
   market: "Pakistan",
   futureLocales: ["ur", "ar"] as const,
   contactEmail:
     process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim() || "gb.intltravel@gmail.com",
   /** Public contact channels (overridable via NEXT_PUBLIC_*; blank values fall back to these). */
-  contactPhone: process.env.NEXT_PUBLIC_CONTACT_PHONE?.trim() || "+92 346 2559008",
-  contactWhatsApp:
-    process.env.NEXT_PUBLIC_CONTACT_WHATSAPP?.trim() || "+971 52 205 1485",
+  contactPhone: envOr(process.env.NEXT_PUBLIC_CONTACT_PHONE, "+92 346 2559008"),
+  contactPhoneLabel: "Call (Pakistan)",
+  contactWhatsApp: envOr(process.env.NEXT_PUBLIC_CONTACT_WHATSAPP, "+971 52 205 1485"),
+  contactWhatsAppLabel: "WhatsApp (UAE)",
+  /**
+   * Future Pakistan WhatsApp number. Stays blank until the owner publishes one.
+   * Do not invent a number. NEXT_PUBLIC_CONTACT_WHATSAPP_PK
+   */
+  contactWhatsAppPakistan: envOr(process.env.NEXT_PUBLIC_CONTACT_WHATSAPP_PK, ""),
   social: {
     twitter: "",
     facebook: "",
@@ -50,7 +65,6 @@ export const footerNavigation = {
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
     { label: "FAQ", href: "/faq" },
-    { label: "My Trips", href: "/my-trips" },
     { label: "Deals", href: "/deals" },
     { label: "Flight Status", href: "/flight-status" },
   ],

@@ -16,7 +16,7 @@ const QUICK_OPTIONS = [
   { emoji: "✈️", label: "Flight / Ticket Help", href: "/flights" },
   { emoji: "🏔️", label: "Tours & Packages", href: "/tours" },
   { emoji: "🛂", label: "Visa Information", href: "/visa" },
-  { emoji: "🎫", label: "Booking Help", href: "/my-trips" },
+  { emoji: "🎫", label: "Booking Help", href: "/contact" },
 ] as const;
 
 function whatsappHref(raw: string): string {

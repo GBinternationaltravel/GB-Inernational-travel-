@@ -8,12 +8,19 @@ import {
 } from "@/lib/seo/metadata";
 import type { DestinationCity, DestinationCountry } from "@/data/destinations/catalog";
 import { destinationPath } from "@/data/destinations/catalog";
+import { siteConfig } from "@/config/site";
 
 export function destinationCityMetadata(city: DestinationCity) {
   const path = destinationPath(city.countrySlug, city.citySlug);
+  const title = city.hasCommercialAirport
+    ? `Flights to ${city.cityName} (${city.iataCode})`
+    : `${city.cityName} travel`;
+  const isNewNorthernGuide = Boolean(city.tourQuery) || !city.hasCommercialAirport;
   return buildMetadata({
-    title: `Flights to ${city.cityName} (${city.iataCode})`,
-    description: `${city.summary} Explore airport info, travel tips, weather snapshots, and flight search from Pakistan.`,
+    title,
+    description: isNewNorthernGuide
+      ? `${city.summary} Seasonal notes are not a live forecast. Ask ${siteConfig.name} for a published fare or a tour.`
+      : `${city.summary} Explore airport info, travel tips, weather snapshots, and flight search from Pakistan.`,
     path,
   });
 }

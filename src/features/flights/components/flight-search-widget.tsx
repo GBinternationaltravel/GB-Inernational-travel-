@@ -10,6 +10,10 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Tabs } from "@/components/ui/tabs";
 import { Alert } from "@/components/ui/alert";
 import { cabinClasses, tripTypes } from "@/config/booking";
+import { siteConfig } from "@/config/site";
+import { whatsappHref } from "@/lib/contact-links";
+import { isoDateUTC } from "@/lib/flights/default-dates";
+import { rememberRecentSearch, readRecentSearches, type RecentSearch } from "@/lib/flights/recent-searches";
 import { AirportAutocomplete } from "@/features/flights/components/airport-autocomplete";
 import {
   buildResultsHref,
@@ -20,8 +24,6 @@ import {
   flightSearchSchema,
   getFlightSearchFieldErrors,
 } from "@/lib/validations/flight";
-import { summarizeRoundTripFares } from "@/lib/flights/round-trip";
-import { FlightFareBar } from "@/features/flights/components/flight-fare-bar";
 import { cn } from "@/lib/utils";
 
 const tripTabs = tripTypes.map((item) => ({
@@ -103,10 +105,19 @@ export function FlightSearchWidget({
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<keyof SearchFormValues | "form", string>>
   >({});
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
+
+  useEffect(() => {
+    setRecentSearches(readRecentSearches());
+  }, []);
 
   function update<K extends keyof SearchFormValues>(key: K, value: SearchFormValues[K]) {
-    setValues((current) => ({ ...current, [key]: value }));
-    setFieldErrors((current) => ({ ...current, [key]: undefined, form: undefined }));
+    setValues((current) => {
+      const next = { ...current, [key]: value };
+      if (key === "tripType" && value !== "ROUND_TRIP") next.returnDate = "";
+      return next;
+    });
+    setFieldErrors((current) => ({ ...current, [key]: undefined, form: undefined, returnDate: undefined }));
   }
 
   function swapAirports() {
@@ -179,12 +190,13 @@ export function FlightSearchWidget({
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    const returnDate = values.tripType === "ROUND_TRIP" ? values.returnDate || undefined : undefined;
     const parsed = flightSearchSchema.safeParse({
       tripType: values.tripType,
       origin: values.origin,
       destination: values.destination,
       departureDate: values.departureDate,
-      returnDate: values.returnDate || undefined,
+      returnDate,
       adults: values.adults,
       children: values.children,
       infants: values.infants,
@@ -202,39 +214,17 @@ export function FlightSearchWidget({
     }
 
     if (values.tripType === "MULTI_CITY") {
-      setFieldErrors({
-        form: hero
-          ? "Multi-city search online is coming soon. Please choose One Way or Round Trip, or message us on WhatsApp for a multi-city trip."
-          : "Multi-city search will be available in a later phase. Please use One Way or Round Trip.",
-      });
+      const text = `Hi ${siteConfig.name}, please plan a multi-city trip. First leg ${values.origin} to ${values.destination} on ${values.departureDate}. ${values.adults} adult(s).`;
+      window.open(whatsappHref(siteConfig.contactWhatsApp, text), "_blank", "noopener,noreferrer");
       return;
     }
 
-    router.push(buildResultsHref(values));
+    const nextValues = { ...values, returnDate: returnDate ?? "" };
+    rememberRecentSearch(nextValues);
+    setRecentSearches(readRecentSearches());
+    router.push(buildResultsHref(nextValues));
     onSearchComplete?.();
   }
-
-  const fareSummary = useMemo(() => {
-    if (!values.origin || !values.destination || !values.departureDate) return null;
-    if (values.origin.length !== 3 || values.destination.length !== 3) return null;
-    if (values.origin === values.destination) return null;
-    if (values.tripType === "MULTI_CITY") return null;
-    if (values.tripType === "ROUND_TRIP" && !values.returnDate) return null;
-    if (values.tripType === "ROUND_TRIP" && values.returnDate < values.departureDate) {
-      return null;
-    }
-    return summarizeRoundTripFares({
-      tripType: values.tripType,
-      origin: values.origin,
-      destination: values.destination,
-      departureDate: values.departureDate,
-      returnDate: values.returnDate || undefined,
-      cabinClass: values.cabinClass,
-      adults: values.adults,
-      children: values.children,
-      infants: values.infants,
-    });
-  }, [values]);
 
   const fromField = (
     <AirportAutocomplete
@@ -262,9 +252,11 @@ export function FlightSearchWidget({
       value={values.departureDate}
       onChange={(event) => update("departureDate", event.target.value)}
       error={fieldErrors.departureDate}
+      min={isoDateUTC(0)}
     />
   );
-  const returnField = (
+  const showReturn = values.tripType === "ROUND_TRIP";
+  const returnField = showReturn ? (
     <DatePicker
       label="Return"
       name="return"
@@ -272,9 +264,9 @@ export function FlightSearchWidget({
       onChange={(event) => update("returnDate", event.target.value)}
       disabled={values.tripType === "ONE_WAY"}
       error={fieldErrors.returnDate}
-      min={values.departureDate || undefined}
+      min={values.departureDate || isoDateUTC(0)}
     />
-  );
+  ) : null;
   const adultsField = (
     <Input
       label="Adults"
@@ -498,14 +490,21 @@ export function FlightSearchWidget({
         ) : null}
 
         {values.tripType === "MULTI_CITY" && !fieldErrors.form ? (
-          <Alert variant="warning" className="mt-4">
-            Multi-city search online is coming soon. For a multi-city trip, message us on WhatsApp
-            and our team will plan it with you.
+          <Alert variant="info" className="mt-4">
+            Multi-city itineraries are planned with our team. Add the first leg below, then use Plan
+            multi-city on WhatsApp. We confirm each flight before ticketing.
           </Alert>
         ) : null}
 
-        <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-stretch">
-          <div className="grid flex-1 grid-cols-2 rounded-2xl border border-[#e4ddd0] bg-white lg:grid-cols-[1.2fr_1.2fr_1fr_1fr_1.15fr]">
+        <form onSubmit={onSubmit} className="mt-3 flex flex-col gap-3 sm:mt-5 lg:flex-row lg:items-stretch">
+          <div
+            className={cn(
+              "grid flex-1 grid-cols-2 rounded-2xl border border-[#e4ddd0] bg-white",
+              showReturn
+                ? "lg:grid-cols-[1.2fr_1.2fr_1fr_1fr_1.15fr]"
+                : "lg:grid-cols-[1.2fr_1.2fr_1fr_1.15fr]",
+            )}
+          >
             <div
               className={cn(
                 heroCellClasses,
@@ -534,11 +533,13 @@ export function FlightSearchWidget({
             <div className={cn(heroCellClasses, "border-r border-b border-[#ece6db] lg:border-b-0")}>
               {departureField}
             </div>
-            <div
-              className={cn(heroCellClasses, "border-b border-[#ece6db] lg:border-r lg:border-b-0")}
-            >
-              {returnField}
-            </div>
+            {showReturn ? (
+              <div
+                className={cn(heroCellClasses, "border-b border-[#ece6db] lg:border-r lg:border-b-0")}
+              >
+                {returnField}
+              </div>
+            ) : null}
             <div
               ref={travellersRef}
               className={cn(
@@ -611,42 +612,33 @@ export function FlightSearchWidget({
             </div>
           </div>
 
-          {fareSummary ? (
-            <div className="lg:col-span-12">
-              <FlightFareBar
-                outbound={{
-                  date: fareSummary.departureDate,
-                  origin: fareSummary.origin,
-                  destination: fareSummary.destination,
-                  fare: fareSummary.outbound?.supplierFare ?? null,
-                }}
-                inbound={
-                  fareSummary.inbound
-                    ? {
-                        date: fareSummary.inbound.date,
-                        origin: fareSummary.inbound.origin,
-                        destination: fareSummary.inbound.destination,
-                        fare: fareSummary.inbound.supplierFare,
-                      }
-                    : null
-                }
-                currency={fareSummary.currency}
-                showReturn={values.tripType === "ROUND_TRIP"}
-              />
-            </div>
-          ) : null}
-
           <Button
             type="submit"
             size="lg"
-            className="h-14 w-full rounded-2xl bg-[linear-gradient(180deg,#dcc08a,#bf9b5e)] px-7 text-[0.9375rem] font-semibold tracking-[0.01em] text-[#0b1f3a] shadow-[0_14px_30px_-12px_rgb(176_141_87/0.75)] hover:bg-[linear-gradient(180deg,#dfc58f,#c9a96e)] focus-visible:outline-[var(--color-navy)] lg:h-auto lg:w-auto lg:min-w-[11rem]"
+            className="sticky bottom-3 z-30 h-14 w-full rounded-2xl bg-[linear-gradient(180deg,#dcc08a,#bf9b5e)] px-7 text-[0.9375rem] font-semibold tracking-[0.01em] text-[#0b1f3a] shadow-[0_14px_30px_-12px_rgb(176_141_87/0.75)] hover:bg-[linear-gradient(180deg,#dfc58f,#c9a96e)] focus-visible:outline-[var(--color-navy)] sm:static lg:h-auto lg:w-auto lg:min-w-[11rem]"
           >
             <Search className="h-4.5 w-4.5" aria-hidden />
-            Search flights
+            {values.tripType === "MULTI_CITY" ? "Plan multi-city on WhatsApp" : "Search flights"}
           </Button>
         </form>
 
         {routeChips("mt-4 lg:mt-5")}
+        {recentSearches.length > 0 ? (
+          <div className="mt-4">
+            <p className="text-[0.625rem] font-semibold tracking-[0.16em] text-[#8b6e3e] uppercase">
+              Recent searches
+            </p>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {recentSearches.map((item) => (
+                <li key={item.href}>
+                  <a href={item.href} className="inline-flex h-8 items-center rounded-full border border-[#e7e1d6] px-3 text-sm text-[var(--color-navy)]">
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -668,8 +660,8 @@ export function FlightSearchWidget({
 
       {!compact ? (
         <Alert variant="info" className="mb-4">
-          Search shows flights currently published by GB International Travel. This is not a live
-          airline or GDS connection. Please confirm availability with us before travelling.
+          Search shows flights currently published by {siteConfig.name}. These are not live airline
+          fares. We confirm availability before a ticket is issued.
         </Alert>
       ) : null}
 
@@ -680,7 +672,17 @@ export function FlightSearchWidget({
       ) : null}
 
       <form onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-        {fromField}
+        <div className="relative">
+          {fromField}
+          <button
+            type="button"
+            onClick={swapAirports}
+            aria-label="Swap From and To airports"
+            className="absolute top-8 right-2 inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--color-border)] bg-white text-[var(--color-navy)]"
+          >
+            <ArrowLeftRight className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
         {toField}
         {departureField}
         {returnField}
@@ -692,44 +694,40 @@ export function FlightSearchWidget({
 
         {values.tripType === "MULTI_CITY" ? (
           <div className="md:col-span-2 xl:col-span-6">
-            <Alert variant="warning">
-              Multi-city search UI is prepared. Full multi-city routing will be implemented later.
+            <Alert variant="info">
+              Multi-city trips are planned on WhatsApp. Fill in the first leg, then send it to our
+              team. We confirm each flight before ticketing.
             </Alert>
           </div>
         ) : null}
 
-        {fareSummary ? (
-          <div className="md:col-span-2 xl:col-span-6">
-            <FlightFareBar
-              outbound={{
-                date: fareSummary.departureDate,
-                origin: fareSummary.origin,
-                destination: fareSummary.destination,
-                fare: fareSummary.outbound?.supplierFare ?? null,
-              }}
-              inbound={
-                fareSummary.inbound
-                  ? {
-                      date: fareSummary.inbound.date,
-                      origin: fareSummary.inbound.origin,
-                      destination: fareSummary.inbound.destination,
-                      fare: fareSummary.inbound.supplierFare,
-                    }
-                  : null
-              }
-              currency={fareSummary.currency}
-              showReturn={values.tripType === "ROUND_TRIP"}
-            />
-          </div>
-        ) : null}
-
         <div className="md:col-span-2 xl:col-span-6">
-          <Button type="submit" size="lg" className="w-full sm:w-auto">
+          <Button
+            type="submit"
+            size="lg"
+            className="sticky bottom-3 z-30 h-14 w-full sm:static sm:h-12 sm:w-auto"
+          >
             <Search className="h-4 w-4" />
-            Search Flights
+            {values.tripType === "MULTI_CITY" ? "Plan multi-city on WhatsApp" : "Search flights"}
           </Button>
         </div>
       </form>
+      {recentSearches.length > 0 ? (
+        <div className="mt-4">
+          <p className="text-xs font-semibold tracking-wide text-[var(--color-muted)] uppercase">
+            Recent searches
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {recentSearches.map((item) => (
+              <li key={item.href}>
+                <a href={item.href} className="text-sm font-medium text-[var(--color-brand)]">
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }

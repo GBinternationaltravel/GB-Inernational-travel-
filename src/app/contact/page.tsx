@@ -19,7 +19,7 @@ export const metadata: Metadata = buildMetadata({
 const channels = [
   {
     icon: Phone,
-    label: "Phone",
+    label: siteConfig.contactPhoneLabel,
     value: siteConfig.contactPhone,
     href: telHref(),
     note: "Call us about bookings, tickets and travel plans.",
@@ -27,12 +27,24 @@ const channels = [
   },
   {
     icon: MessageCircle,
-    label: "WhatsApp",
+    label: siteConfig.contactWhatsAppLabel,
     value: siteConfig.contactWhatsApp,
     href: whatsappHref(),
     note: "Chat with our team or send documents on WhatsApp.",
     external: true,
   },
+  ...(siteConfig.contactWhatsAppPakistan
+    ? [
+        {
+          icon: MessageCircle,
+          label: "WhatsApp (Pakistan)",
+          value: siteConfig.contactWhatsAppPakistan,
+          href: whatsappHref(siteConfig.contactWhatsAppPakistan),
+          note: "Pakistan WhatsApp, when this number is published.",
+          external: true,
+        },
+      ]
+    : []),
   {
     icon: Mail,
     label: "Email",
@@ -41,7 +53,7 @@ const channels = [
     note: "Email us for quotes, booking changes and refunds.",
     external: false,
   },
-] as const;
+];
 
 export default function ContactPage() {
   return (

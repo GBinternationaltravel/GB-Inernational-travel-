@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Menu, Plane, X } from "lucide-react";
-import { navigation } from "@/config/site";
+import { navigation, siteConfig } from "@/config/site";
 import { Container } from "@/components/ui/container";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +42,7 @@ export function SiteHeader() {
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-emerald)]">
             <Plane className="h-4.5 w-4.5 text-white" aria-hidden />
           </span>
-          <span className="site-brand">GB International Travels</span>
+          <span className="site-brand">{siteConfig.name}</span>
         </Link>
 
         <nav className="hidden items-center gap-5 xl:flex" aria-label="Primary">
@@ -79,11 +79,7 @@ export function SiteHeader() {
                 Logout
               </button>
             </>
-          ) : (
-            <Link href="/login" className="text-sm text-white/80 hover:text-white">
-              Login
-            </Link>
-          )}
+          ) : null}
           <Link
             href="/flights"
             className="inline-flex h-9 items-center rounded-[var(--radius-md)] bg-[var(--color-emerald)] px-3.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--color-emerald-dark)]"
@@ -157,15 +153,7 @@ export function SiteHeader() {
                 Logout
               </button>
             </>
-          ) : (
-            <Link
-              href="/login"
-              className="rounded-[var(--radius-md)] px-3 py-2.5 text-sm text-white/90 hover:bg-white/10"
-              onClick={() => setOpen(false)}
-            >
-              Login
-            </Link>
-          )}
+          ) : null}
           <Link
             href="/flights"
             className="mt-2 rounded-[var(--radius-md)] bg-[var(--color-emerald)] px-3 py-3 text-center text-sm font-semibold text-white"

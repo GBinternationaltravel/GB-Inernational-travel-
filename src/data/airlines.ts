@@ -8,6 +8,7 @@ export const airlines: Array<AirlineSummary & { id: string }> = [
   { id: "pk", iataCode: "PK", name: "Pakistan International Airlines" },
   { id: "er", iataCode: "ER", name: "Fly Jinnah" },
   { id: "pa", iataCode: "PA", name: "airblue" },
+  { id: "pf", iataCode: "PF", name: "AirSial" },
   { id: "ek", iataCode: "EK", name: "Emirates" },
   { id: "ey", iataCode: "EY", name: "Etihad Airways" },
   { id: "qr", iataCode: "QR", name: "Qatar Airways" },

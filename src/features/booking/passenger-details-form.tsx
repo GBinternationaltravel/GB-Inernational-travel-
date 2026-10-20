@@ -327,6 +327,10 @@ export function PassengerDetailsForm({
             : null
         }
         showReturn={selection.search.tripType === "ROUND_TRIP"}
+        seats={selection.search.adults + (selection.search.children ?? 0)}
+        infantFare={
+          (selection.offer.infantFareTotal ?? 0) + (selection.returnOffer?.infantFareTotal ?? 0)
+        }
         isMock={selection.offer.isMock || Boolean(selection.returnOffer?.isMock)}
       />
 

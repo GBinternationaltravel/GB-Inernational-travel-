@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ChevronLeft, ChevronRight, Filter, SlidersHorizontal, X } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Filter, MessageCircle, SlidersHorizontal, X } from "lucide-react";
+import { siteConfig } from "@/config/site";
+import { whatsappHref } from "@/lib/contact-links";
+import { FaresUpdatedLine } from "@/components/flights/fares-updated-line";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -34,11 +37,9 @@ import type { FlightFiltersState, FlightOffer, FlightSortOption } from "@/types/
 import { cabinClasses } from "@/config/booking";
 
 const sortOptions: Array<{ value: FlightSortOption; label: string }> = [
-  { value: "recommended", label: "Recommended" },
   { value: "cheapest", label: "Cheapest" },
-  { value: "fastest", label: "Fastest" },
-  { value: "earliest_departure", label: "Earliest Departure" },
-  { value: "latest_arrival", label: "Latest Arrival" },
+  { value: "earliest_departure", label: "Earliest" },
+  { value: "shortest", label: "Shortest" },
 ];
 
 export function FlightResultsExperience({
@@ -50,6 +51,9 @@ export function FlightResultsExperience({
   isMock = true,
   supplierCode = "MOCK",
   supplierEnvironment = null,
+  datesWereFilled = false,
+  nearbyDates = [],
+  faresUpdatedAt = null,
 }: {
   search: SearchFormValues;
   initialOffers: FlightOffer[];
@@ -59,6 +63,10 @@ export function FlightResultsExperience({
   isMock?: boolean;
   supplierCode?: string;
   supplierEnvironment?: string | null;
+  /** True when the link had no usable date and the page filled one in. */
+  datesWereFilled?: boolean;
+  nearbyDates?: Array<{ date: string; href: string; count: number }>;
+  faresUpdatedAt?: string | null;
 }) {
   const router = useRouter();
   const isRoundTrip = search.tripType === "ROUND_TRIP";
@@ -70,15 +78,9 @@ export function FlightResultsExperience({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [selectingId, setSelectingId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeLeg, setActiveLeg] = useState<"outbound" | "return">("outbound");
   const [outboundOffer, setOutboundOffer] = useState<FlightOffer | null>(null);
-  const [, startTransition] = useTransition();
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 300);
-    return () => window.clearTimeout(timer);
-  }, []);
+  const [isNavigating, startTransition] = useTransition();
 
   useEffect(() => {
     if (!isRoundTrip) return;
@@ -169,7 +171,7 @@ export function FlightResultsExperience({
         search: searchContext(),
         selectedAt: new Date().toISOString(),
       });
-      router.push("/booking/passengers");
+      router.push("/booking/request");
       return;
     }
 
@@ -201,7 +203,7 @@ export function FlightResultsExperience({
       selectedAt: new Date().toISOString(),
     });
     clearPendingOutbound();
-    router.push("/booking/passengers");
+    router.push("/booking/request");
   }
 
   if (loadError) {
@@ -228,6 +230,18 @@ export function FlightResultsExperience({
 
   return (
     <div className="pb-24 lg:pb-10">
+      {datesWereFilled ? (
+        <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 lg:px-8">
+          <Alert variant="info">
+            This link had no departure date, so we used {formatFlightDate(search.departureDate)}
+            {search.tripType === "ROUND_TRIP" && search.returnDate
+              ? ` and return ${formatFlightDate(search.returnDate)}`
+              : ""}
+            . Change the dates if you need different days. These are published fares, not live
+            airline prices.
+          </Alert>
+        </div>
+      ) : null}
       <div className="sticky top-16 z-30 border-b border-[var(--color-border)] bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -364,7 +378,11 @@ export function FlightResultsExperience({
                   : null
               }
               showReturn={isRoundTrip}
-              isMock={isMock}
+              seats={search.adults + search.children}
+              infantFare={
+                ((outboundOffer ?? cheapestOutbound)?.infantFareTotal ?? 0) +
+                (isRoundTrip ? (cheapestReturn?.infantFareTotal ?? 0) : 0)
+              }
             />
           </div>
 
@@ -398,10 +416,10 @@ export function FlightResultsExperience({
           ) : (
             <Alert variant="warning" className="mb-4">
               {isMock
-                ? "Showing mock development inventory only. These are not live airline fares or seats."
-                : `Live pre-production supplier data (${supplierCode}${
+                ? "These rows are not the fares we publish. Ask us for a quote. Nothing here is a confirmed seat or a ticket."
+                : `These results (${supplierCode}${
                     supplierEnvironment ? ` · ${supplierEnvironment}` : ""
-                  }). These are not confirmed flights or issued tickets.`}
+                  }) are not confirmed flights or issued tickets. Ask us to confirm the fare before you travel.`}
             </Alert>
           )}
 
@@ -423,37 +441,27 @@ export function FlightResultsExperience({
             </div>
           </div>
 
-          {loading ? (
-            <div className="space-y-4">
+          {faresUpdatedAt ? (
+            <div className="mb-4 lg:hidden">
+              <FaresUpdatedLine updatedAt={faresUpdatedAt} />
+            </div>
+          ) : null}
+
+          {isNavigating ? (
+            <div className="min-h-[28rem] space-y-4" aria-busy="true" aria-live="polite">
               <FlightResultCardSkeleton />
               <FlightResultCardSkeleton />
               <FlightResultCardSkeleton />
             </div>
           ) : visibleOffers.length === 0 ? (
-            <EmptyState
-              title={
-                isMock
-                  ? "No flights match your filters."
-                  : "No flights are available for this search right now."
-              }
-              description={
-                isMock
-                  ? "Try clearing filters or changing your search dates and airports."
-                  : "The supplier returned no availability. Try different dates or airports."
-              }
-              action={
-                <div className="flex flex-wrap justify-center gap-3">
-                  <Button type="button" onClick={clearFilters}>
-                    Clear Filters
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setModifyOpen(true)}>
-                    Modify Search
-                  </Button>
-                </div>
-              }
+            <EmptyResults
+              search={search}
+              nearbyDates={nearbyDates}
+              onClear={clearFilters}
+              onModify={() => setModifyOpen(true)}
             />
           ) : (
-            <div className="space-y-4">
+            <div className="min-h-[28rem] space-y-4">
               {visibleOffers.map((offer) => (
                 <FlightResultCard
                   key={`${showingReturn ? "return" : "outbound"}-${offer.id}`}
@@ -461,13 +469,8 @@ export function FlightResultsExperience({
                   onSelect={onSelect}
                   selecting={selectingId === offer.id}
                   selectLabel={
-                    showingReturn
-                      ? "Select return flight"
-                      : isRoundTrip
-                        ? "Select outbound flight"
-                        : "Select Flight"
+                    showingReturn || !isRoundTrip ? "Request booking" : "Select departure"
                   }
-                  priceMode={isRoundTrip ? "leg" : "trip"}
                 />
               ))}
             </div>
@@ -576,6 +579,65 @@ function Drawer({
         {children}
       </div>
     </div>
+  );
+}
+
+function EmptyResults({
+  search,
+  nearbyDates,
+  onClear,
+  onModify,
+}: {
+  search: SearchFormValues;
+  nearbyDates: Array<{ date: string; href: string; count: number }>;
+  onClear: () => void;
+  onModify: () => void;
+}) {
+  const message = `Hi ${siteConfig.name}, please quote ${search.origin} to ${search.destination} on ${search.departureDate}${
+    search.tripType === "ROUND_TRIP" && search.returnDate ? `, returning ${search.returnDate}` : ""
+  }. ${search.adults} adult(s).`;
+
+  return (
+    <EmptyState
+      title="No published fare for this search"
+      description="We have not listed a fare for these dates. You can check a nearby day, or ask us to quote it. A quote is not a confirmed seat."
+      action={
+        <div className="flex flex-col items-center gap-4">
+          {nearbyDates.length > 0 ? (
+            <ul className="flex flex-wrap justify-center gap-2">
+              {nearbyDates.map((item) => (
+                <li key={item.date}>
+                  <a
+                    href={item.href}
+                    className="inline-flex h-11 items-center rounded-full border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-navy)]"
+                  >
+                    {formatFlightDate(item.date)} · {item.count}{" "}
+                    {item.count === 1 ? "fare" : "fares"}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <div className="flex flex-wrap justify-center gap-3">
+            <a
+              href={whatsappHref(siteConfig.contactWhatsApp, message)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 items-center gap-2 rounded-md bg-[var(--color-emerald)] px-4 text-sm font-semibold text-white"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden />
+              Request a quote on WhatsApp
+            </a>
+            <Button type="button" variant="outline" onClick={onModify}>
+              Change dates
+            </Button>
+            <Button type="button" variant="ghost" onClick={onClear}>
+              Clear filters
+            </Button>
+          </div>
+        </div>
+      }
+    />
   );
 }
 

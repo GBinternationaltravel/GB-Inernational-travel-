@@ -37,7 +37,7 @@ export default function DestinationsPage() {
 
       <PageHero
         title="Destinations"
-        description="City guides for popular routes from Pakistan — with sample weather, travel tips, and flight search links."
+        description="City guides for popular routes from Pakistan, with seasonal notes, travel tips, and flight search links."
         breadcrumbs={[
           { label: "Home", href: "/" },
           { label: "Destinations" },

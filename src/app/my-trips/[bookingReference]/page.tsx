@@ -241,8 +241,8 @@ export default async function TripDetailsPage({ params }: Params) {
             ? " Email delivery is configured for the reminder engine."
             : " Email currently uses development console delivery until a live email provider is configured."}
           {weatherStatus.liveConfigured
-            ? " Destination weather can use the live weather provider."
-            : " Destination weather uses sample data until a live weather provider is configured."}
+            ? " A live destination forecast can be shown when the provider returns one."
+            : " This page does not show a sample forecast. Check the weather again before you travel."}
         </p>
         <ul className="mt-4 space-y-3 text-sm">
           {reminders.reminders.map((item) => (
@@ -343,8 +343,8 @@ export default async function TripDetailsPage({ params }: Params) {
             confirms it.
           </li>
           <li>
-            Destination weather on this page may be sample data — check the weather label before
-            relying on it.
+            This page shows a live forecast only when one is available. Otherwise check the weather
+            again before you travel.
           </li>
         </ul>
       </section>

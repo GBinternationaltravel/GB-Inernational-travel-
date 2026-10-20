@@ -10,11 +10,14 @@ import { siteConfig } from "@/config/site";
 import { whatsappHref } from "@/lib/contact-links";
 import { cn } from "@/lib/utils";
 import { foundationFaqs } from "@/data/mock/content";
+import { getPublishedFaresUpdatedAt } from "@/providers/flights/inventory-flight-supplier";
 
-export function HomePage() {
+export async function HomePage() {
+  const faresUpdatedAt = await getPublishedFaresUpdatedAt();
+
   return (
     <>
-      <HomeHero />
+      <HomeHero faresUpdatedAt={faresUpdatedAt} />
       <HomeTrustStrip />
 
       <HomeSignatureDestinations />

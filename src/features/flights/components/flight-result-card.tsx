@@ -8,6 +8,7 @@ import { calculateOfferPriceSnapshot } from "@/lib/booking/pricing";
 import { CUSTOMER_FARE_LABEL } from "@/lib/booking/customer-price";
 import {
   formatDuration,
+  formatFlightDate,
   formatFlightTime,
   formatPrice,
   formatBaggageLabel,
@@ -26,8 +27,10 @@ export function FlightResultCard({
   onSelect: (offer: FlightOffer) => void;
   selecting?: boolean;
   selectLabel?: string;
+  /** Accepted for older callers. Every card shows the same published total. */
   priceMode?: "trip" | "leg";
 }) {
+  void priceMode;
   const first = offer.segments[0];
   const last = offer.segments[offer.segments.length - 1];
   if (!first || !last) return null;
@@ -35,7 +38,8 @@ export function FlightResultCard({
   const airline = first.airline;
   // Customers see one published fare; the GB service fee is never shown separately.
   const pricing = calculateOfferPriceSnapshot(offer);
-  const displayTotal = priceMode === "leg" ? pricing.supplierFare : pricing.total;
+  const displayTotal = pricing.total;
+  const baggageKnown = offer.baggageIncluded && offer.baggageKg > 0;
 
   return (
     <article className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-elevated)] sm:p-5">
@@ -57,12 +61,12 @@ export function FlightResultCard({
         </div>
         <Badge variant={offer.isMock ? "warning" : "info"}>
           {offer.isMock
-            ? "Mock inventory"
+            ? "Not a published fare"
             : offer.supplierCode === "INVENTORY"
               ? typeof offer.seatsRemaining === "number" && offer.seatsRemaining <= 5
                 ? `Up to ${offer.seatsRemaining} ${offer.seatsRemaining === 1 ? "seat" : "seats"} listed — confirm with us`
                 : "Listed in our inventory"
-              : "Live pre-production — not a confirmed ticket"}
+              : "Ask us to confirm this fare"}
         </Badge>
       </div>
 
@@ -101,30 +105,21 @@ export function FlightResultCard({
       <div className="mt-5 flex flex-col gap-4 border-t border-[var(--color-border)] pt-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--color-muted)]">
-            <span>{formatBaggageLabel(offer)}</span>
+            {baggageKnown ? <span>{formatBaggageLabel(offer)}</span> : null}
             {offer.fareFamily ? <span>{offer.fareFamily}</span> : null}
             <span>{offer.refundable ? "Refundable" : "Non-refundable"}</span>
           </div>
-          <dl className="mt-3 grid max-w-md gap-1 text-sm">
-            <div className="flex justify-between gap-4">
-              <dt className="text-[var(--color-muted)]">
-                {priceMode === "leg" ? "Supplier fare" : CUSTOMER_FARE_LABEL}
-              </dt>
-              <dd className="font-medium tabular-nums">
-                {formatPrice(displayTotal, pricing.currency)}
-              </dd>
-            </div>
-            {priceMode === "leg" ? (
-              <p className="text-xs text-[var(--color-muted)]">
-                Combined fare and GB service fee are calculated after both flights are selected.
-              </p>
-            ) : null}
-          </dl>
+          {offer.fareUpdatedAt ? (
+            <p className="mt-3 text-xs text-[var(--color-muted)]">
+              Fare last updated {formatFlightDate(offer.fareUpdatedAt)}
+            </p>
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center justify-between gap-4 lg:flex-col lg:items-end">
           <p className="text-2xl font-bold tracking-tight text-[var(--color-emerald)] lg:text-3xl">
             {formatPrice(displayTotal, pricing.currency)}
           </p>
+          <p className="text-xs text-[var(--color-muted)]">{CUSTOMER_FARE_LABEL}</p>
           <Button
             size="lg"
             className="min-w-36"
