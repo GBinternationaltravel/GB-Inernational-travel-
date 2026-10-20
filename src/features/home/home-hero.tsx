@@ -255,18 +255,27 @@ const trustPoints: {
     title: "Manual verification before ticketing",
     text: "We check availability and the fare before an e-ticket is issued. A search result is not a ticket.",
   },
-  {
-    icon: Compass,
-    title: siteConfig.responseTime,
-    text: "This is the reply time the owner still needs to confirm. Until then it stays a placeholder.",
-  },
+  ...(siteConfig.responseTime
+    ? [
+        {
+          icon: Compass,
+          title: "Reply time",
+          text: siteConfig.responseTime,
+        },
+      ]
+    : []),
 ];
 
 export function HomeTrustStrip() {
   return (
     <section aria-label="Why travel with GB International Travel" className="bg-white">
       <Container className="pt-16 pb-16 sm:pt-20 lg:pb-20">
-        <ul className="grid grid-cols-2 gap-x-6 gap-y-9 sm:gap-x-10 sm:gap-y-10 lg:grid-cols-4 lg:gap-x-0">
+        <ul
+          className={cn(
+            "grid grid-cols-1 gap-y-9 sm:grid-cols-2 sm:gap-x-10 lg:gap-x-0",
+            trustPoints.length > 3 ? "lg:grid-cols-4" : "lg:grid-cols-3",
+          )}
+        >
           {trustPoints.map((point) => {
             const Icon = point.icon;
             const content = (

@@ -15,6 +15,7 @@ import {
   stopsLabel,
 } from "@/lib/flights/filter-sort";
 import { formatFlightNumber } from "@/lib/flights/flight-number";
+import { bookOnWhatsAppHref, quoteOnWhatsAppHref } from "@/lib/flights/whatsapp-booking";
 
 export function FlightResultCard({
   offer,
@@ -22,6 +23,9 @@ export function FlightResultCard({
   selecting = false,
   selectLabel = "Select Flight",
   priceMode = "trip",
+  actions = "public",
+  pagePath = "/flights/results",
+  passengers = "1 adult",
 }: {
   offer: FlightOffer;
   onSelect: (offer: FlightOffer) => void;
@@ -29,6 +33,10 @@ export function FlightResultCard({
   selectLabel?: string;
   /** Accepted for older callers. Every card shows the same published total. */
   priceMode?: "trip" | "leg";
+  /** Public cards book on WhatsApp. Admin selection stays a select button. */
+  actions?: "public" | "select";
+  pagePath?: string;
+  passengers?: string;
 }) {
   void priceMode;
   const first = offer.segments[0];
@@ -40,6 +48,28 @@ export function FlightResultCard({
   const pricing = calculateOfferPriceSnapshot(offer);
   const displayTotal = pricing.total;
   const baggageKnown = offer.baggageIncluded && offer.baggageKg > 0;
+  const publishedFare = !offer.isMock && displayTotal > 0;
+  const routeLabel = `${first.origin.city} (${first.origin.iataCode})`;
+  const destinationLabel = `${last.destination.city} (${last.destination.iataCode})`;
+  const flightTime = `${formatFlightTime(first.departureAt)}–${formatFlightTime(last.arrivalAt)}`;
+  const whatsappUrl = publishedFare
+    ? bookOnWhatsAppHref({
+        origin: routeLabel,
+        destination: destinationLabel,
+        date: formatFlightDate(first.departureAt),
+        airline: airline.name,
+        flightTime,
+        passengers,
+        farePkr: displayTotal,
+        currency: pricing.currency,
+        pagePath,
+      })
+    : quoteOnWhatsAppHref({
+        origin: routeLabel,
+        destination: destinationLabel,
+        pagePath,
+        note: "This row is not a published fare. Please quote it.",
+      });
 
   return (
     <article className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-elevated)] sm:p-5">
@@ -103,7 +133,7 @@ export function FlightResultCard({
       </div>
 
       <div className="mt-5 flex flex-col gap-4 border-t border-[var(--color-border)] pt-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="min-w-0 flex-1">
+        <div className="order-2 min-w-0 flex-1 lg:order-1">
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--color-muted)]">
             {baggageKnown ? <span>{formatBaggageLabel(offer)}</span> : null}
             {offer.fareFamily ? <span>{offer.fareFamily}</span> : null}
@@ -115,14 +145,38 @@ export function FlightResultCard({
             </p>
           ) : null}
         </div>
-        <div className="flex shrink-0 items-center justify-between gap-4 lg:flex-col lg:items-end">
-          <p className="text-2xl font-bold tracking-tight text-[var(--color-emerald)] lg:text-3xl">
-            {formatPrice(displayTotal, pricing.currency)}
-          </p>
-          <p className="text-xs text-[var(--color-muted)]">{CUSTOMER_FARE_LABEL}</p>
+        <div className="order-1 flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:min-w-56 sm:items-stretch lg:order-2 lg:items-end">
+          {actions === "select" || publishedFare ? (
+            <div className="lg:text-right">
+              <p className="text-xs font-semibold tracking-wide text-[var(--color-muted)] uppercase">
+                {CUSTOMER_FARE_LABEL}
+              </p>
+              <p className="font-display text-3xl font-bold tracking-tight text-[var(--color-navy)] sm:text-4xl">
+                {formatPrice(displayTotal, pricing.currency)}
+              </p>
+              <p className="mt-1 max-w-xs text-xs text-[var(--color-muted)] lg:ml-auto">
+                One total, including the agency fee. Confirmed before ticketing.
+              </p>
+            </div>
+          ) : (
+            <p className="max-w-xs text-sm text-[var(--color-muted)]">
+              No published fare on this row. Ask us for a quote. A quote is not a ticket.
+            </p>
+          )}
+          {actions === "public" ? (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-12 w-full items-center justify-center rounded-md bg-[var(--color-emerald)] px-4 text-sm font-semibold text-white"
+            >
+              {publishedFare ? "Book on WhatsApp" : "Ask for a quote on WhatsApp"}
+            </a>
+          ) : null}
           <Button
             size="lg"
-            className="min-w-36"
+            variant={actions === "public" ? "outline" : "primary"}
+            className="w-full"
             onClick={() => onSelect(offer)}
             isLoading={selecting}
           >

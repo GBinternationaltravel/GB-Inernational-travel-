@@ -108,7 +108,7 @@ Leave these blank until the owner publishes a real value. Do not invent them.
 | --- | --- | --- |
 | `BOOKING_REQUEST_EMAIL` | Inbox for booking requests and callback requests | `gb.intltravel@gmail.com` |
 | `NEXT_PUBLIC_CONTACT_WHATSAPP_PK` | Pakistan WhatsApp | hidden |
-| `NEXT_PUBLIC_RESPONSE_TIME` | Trust-strip reply time | `{{RESPONSE_TIME}}` |
+| `NEXT_PUBLIC_RESPONSE_TIME` | Trust-strip reply time | hidden when blank |
 | `NEXT_PUBLIC_LEGAL_NAME` | Legal name on About | hidden |
 | `NEXT_PUBLIC_OFFICE_ADDRESS` | Office address on About and in JSON-LD | hidden |
 | `NEXT_PUBLIC_LICENCE` | Licence line on About | hidden |
