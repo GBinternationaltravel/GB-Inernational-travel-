@@ -504,7 +504,7 @@ export function FlightSearchWidget({
           </Alert>
         ) : null}
 
-        <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-stretch">
+        <form onSubmit={onSubmit} className="mt-3 flex flex-col gap-3 sm:mt-5 lg:flex-row lg:items-stretch">
           <div className="grid flex-1 grid-cols-2 rounded-2xl border border-[#e4ddd0] bg-white lg:grid-cols-[1.2fr_1.2fr_1fr_1fr_1.15fr]">
             <div
               className={cn(

@@ -94,37 +94,48 @@ function HeroBackground() {
 export function HomeHero() {
   return (
     <section aria-labelledby="home-hero-title" className="relative bg-white">
-      <div className="relative isolate -mt-14 flex min-h-[86svh] flex-col overflow-hidden bg-[#071428] text-white md:min-h-[640px] lg:-mt-16 lg:min-h-[max(680px,90vh)]">
+      <div className="relative isolate -mt-14 flex min-h-0 flex-col overflow-hidden bg-[#071428] text-white sm:min-h-[640px] lg:-mt-16 lg:min-h-[max(680px,90vh)]">
         <HeroBackground />
 
-        <Container className="relative flex flex-1 flex-col justify-end pt-[calc(3.5rem+3rem)] pb-[12.25rem] sm:pb-[13rem] lg:justify-center lg:pt-[calc(4rem+1.5rem)] lg:pb-[17rem]">
-          <p className="flex items-center gap-2.5 text-[0.625rem] font-medium tracking-[0.2em] whitespace-nowrap text-white/75 uppercase sm:gap-3 sm:text-[0.6875rem] sm:tracking-[0.34em]">
+        <Container className="relative flex flex-1 flex-col justify-start pt-[calc(3.5rem+1.25rem)] pb-6 sm:justify-end sm:pt-[calc(3.5rem+3rem)] sm:pb-[13rem] lg:justify-center lg:pt-[calc(4rem+1.5rem)] lg:pb-[17rem]">
+          <p className="flex items-center gap-2.5 text-[0.625rem] font-medium tracking-[0.16em] whitespace-nowrap text-white/75 uppercase sm:gap-3 sm:text-[0.6875rem] sm:tracking-[0.34em]">
             <span className="hidden h-px w-10 bg-[#c9a96e] sm:block" aria-hidden />
             <Plane className="h-3.5 w-3.5 shrink-0 text-[#c9a96e]" strokeWidth={1.5} aria-hidden />
-            Air tickets · Domestic &amp; International
+            <span className="sm:hidden">Air tickets</span>
+            <span className="hidden sm:inline">Air tickets · Domestic &amp; International</span>
           </p>
 
           <h1
             id="home-hero-title"
             className={cn(
               homeDisplayFont.className,
-              "mt-5 max-w-[22ch] text-[2.375rem] leading-[1.05] sm:mt-6 font-medium tracking-[-0.012em] text-balance text-white [text-shadow:0_2px_28px_rgb(3_10_22/0.35)] sm:text-[3.5rem] lg:max-w-none lg:text-[min(4.25rem,6.6vh)] lg:leading-[1.0]",
+              "mt-3 max-w-[18ch] font-medium tracking-[-0.012em] text-balance text-white [text-shadow:0_2px_28px_rgb(3_10_22/0.35)] sm:mt-6 sm:max-w-[22ch] sm:text-[3.5rem] sm:leading-[1.05] lg:max-w-none lg:text-[min(4.25rem,6.6vh)] lg:leading-[1.0]",
+              "text-[clamp(1.7rem,7.4vw,2.15rem)] leading-[1.12]",
             )}
           >
-            Search domestic &amp; international
-            <br className="hidden lg:block" /> air tickets at{" "}
-            <br className="hidden lg:block" />
-            <em className="text-[#e6d1a6] italic">clear PKR fares</em>
+            <span className="sm:hidden">Air tickets at clear PKR fares</span>
+            <span className="hidden sm:inline">
+              Search domestic &amp; international
+              <br className="hidden lg:block" /> air tickets at{" "}
+              <br className="hidden lg:block" />
+              <em className="text-[#e6d1a6] italic">clear PKR fares</em>
+            </span>
           </h1>
 
-          <p className="mt-5 max-w-[35rem] text-[0.9375rem] leading-[1.7] text-white/85 sm:mt-6 sm:text-[1.0625rem] sm:font-light sm:text-white/80">
-            Search published fares for {inventoryAirlines}. Prices are in PKR and include taxes and
-            our service charge. Our team confirms the booking and issues your e-ticket and PNR after
-            verification.
+          <p className="mt-3 max-w-[35rem] text-[clamp(0.875rem,3.5vw,1rem)] leading-snug text-white/85 sm:mt-6 sm:text-[1.0625rem] sm:leading-[1.7] sm:font-light sm:text-white/80">
+            <span className="sm:hidden">
+              PIA, airblue, AirSial, Fly Jinnah &amp; Emirates. Our team confirms and issues your
+              e-ticket.
+            </span>
+            <span className="hidden sm:inline">
+              Search published fares for {inventoryAirlines}. Prices are in PKR and include taxes and
+              our service charge. Our team confirms the booking and issues your e-ticket and PNR after
+              verification.
+            </span>
           </p>
 
-          <div className="mt-6 max-w-[36rem] border-l border-[#c9a96e]/70 pl-4 sm:mt-7 sm:pl-5">
-            <p className="text-sm leading-relaxed text-white/80">
+          <div className="mt-3 sm:mt-7 sm:max-w-[36rem] sm:border-l sm:border-[#c9a96e]/70 sm:pl-5">
+            <p className="hidden text-sm leading-relaxed text-white/80 sm:block">
               <span
                 className={cn(
                   homeDisplayFont.className,
@@ -133,9 +144,9 @@ export function HomeHero() {
               >
                 Planning a trip to Gilgit-Baltistan?
               </span>{" "}
-              Talk to a reliable local tour agency.
+              Talk to our local tours team.
             </p>
-            <p className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[0.8125rem] text-white/80">
+            <p className="mt-2.5 hidden flex-wrap items-center gap-x-5 gap-y-2 text-[0.8125rem] text-white/80 sm:flex">
               <a
                 href={whatsappHref(siteConfig.contactWhatsApp, toursWhatsappMessage)}
                 target="_blank"
@@ -143,22 +154,45 @@ export function HomeHero() {
                 className="inline-flex items-center gap-1.5 underline decoration-[#c9a96e]/70 decoration-1 underline-offset-[5px] transition-colors hover:text-white hover:decoration-[#c9a96e] focus-visible:outline-white"
               >
                 <MessageCircle className="h-3.5 w-3.5 text-[#c9a96e]" strokeWidth={1.6} aria-hidden />
-                <span className="sm:hidden">WhatsApp</span>
-                <span className="hidden sm:inline">WhatsApp {siteConfig.contactWhatsApp}</span>
+                {siteConfig.contactWhatsAppLabel} {siteConfig.contactWhatsApp}
               </a>
               <a
                 href={telHref(siteConfig.contactPhone)}
                 className="inline-flex items-center gap-1.5 underline decoration-white/30 decoration-1 underline-offset-[5px] transition-colors hover:text-white hover:decoration-[#c9a96e] focus-visible:outline-white"
               >
                 <Phone className="h-3.5 w-3.5 text-[#c9a96e]" strokeWidth={1.6} aria-hidden />
-                <span className="sm:hidden">Call</span>
-                <span className="hidden sm:inline">Call {siteConfig.contactPhone}</span>
+                {siteConfig.contactPhoneLabel} {siteConfig.contactPhone}
               </a>
               <Link
                 href="/tours"
                 className="inline-flex items-center gap-1 font-medium text-[#e6d1a6] transition-colors hover:text-white focus-visible:outline-white"
               >
-                Explore tours
+                Gilgit-Baltistan tours
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+              </Link>
+            </p>
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.8125rem] text-white/85 sm:hidden">
+              <a
+                href={whatsappHref(siteConfig.contactWhatsApp, whatsappMessage)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center gap-1.5 underline decoration-[#c9a96e]/70 underline-offset-4"
+              >
+                <MessageCircle className="h-3.5 w-3.5 text-[#c9a96e]" strokeWidth={1.6} aria-hidden />
+                {siteConfig.contactWhatsAppLabel}
+              </a>
+              <a
+                href={telHref(siteConfig.contactPhone)}
+                className="inline-flex min-h-11 items-center gap-1.5 underline decoration-white/40 underline-offset-4"
+              >
+                <Phone className="h-3.5 w-3.5 text-[#c9a96e]" strokeWidth={1.6} aria-hidden />
+                {siteConfig.contactPhoneLabel}
+              </a>
+              <Link
+                href="/tours"
+                className="inline-flex min-h-11 items-center gap-1 font-medium text-[#e6d1a6]"
+              >
+                Gilgit-Baltistan tours
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden />
               </Link>
             </p>
@@ -190,7 +224,7 @@ export function HomeHero() {
         </Container>
       </div>
 
-      <Container className="relative z-10 -mt-[10.5rem] lg:-mt-[14rem]">
+      <Container className="relative z-10 -mt-2 sm:-mt-[10.5rem] lg:-mt-[14rem]">
         <HomeHeroSearch />
       </Container>
     </section>

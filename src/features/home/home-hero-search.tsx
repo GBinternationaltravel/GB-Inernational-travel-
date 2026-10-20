@@ -113,7 +113,7 @@ export function HomeHeroSearch() {
         })}
       </div>
 
-      <div className="mt-3 rounded-[24px] bg-white p-4 text-[var(--color-ink)] shadow-[0_44px_90px_-34px_rgb(4_12_28/0.6),0_14px_32px_-20px_rgb(4_12_28/0.35)] ring-1 ring-[rgb(11_31_58/0.05)] sm:p-6 lg:p-7">
+      <div className="mt-2 rounded-[20px] bg-white p-3 text-[var(--color-ink)] shadow-[0_44px_90px_-34px_rgb(4_12_28/0.6),0_14px_32px_-20px_rgb(4_12_28/0.35)] ring-1 ring-[rgb(11_31_58/0.05)] sm:mt-3 sm:rounded-[24px] sm:p-6 lg:p-7">
         <div
           role="tabpanel"
           id={`${baseId}-panel-flights`}
