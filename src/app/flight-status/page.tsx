@@ -6,7 +6,7 @@ import { Section } from "@/components/ui/section";
 import { Alert } from "@/components/ui/alert";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { FlightStatusLookupForm } from "@/features/flight-status/flight-status-lookup-form";
-import { lookupFlightStatus } from "@/services/flight-status-service";
+import { getFlightStatusProviderStatus, lookupPublicFlightStatus } from "@/services/flight-status-service";
 
 export const metadata: Metadata = buildMetadata({
   title: "Flight Status",
@@ -22,12 +22,14 @@ type Props = {
 export default async function FlightStatusPage({ searchParams }: Props) {
   const params = await searchParams;
   const flight = params.flight?.trim().toUpperCase();
-  const result = flight
-    ? await lookupFlightStatus({
-        flightNumber: flight,
-        date: params.date,
-      })
-    : null;
+  const provider = getFlightStatusProviderStatus();
+  const result =
+    flight && provider.useLive
+      ? await lookupPublicFlightStatus({
+          flightNumber: flight,
+          date: params.date,
+        })
+      : null;
 
   return (
     <>
@@ -46,11 +48,16 @@ export default async function FlightStatusPage({ searchParams }: Props) {
         </Suspense>
 
         <div className="mt-8">
-          {!flight ? (
-            <Alert variant="info" title="Status provider not connected for live data">
-              You can prepare a lookup now. GB International Travel will not invent boarding
-              gates, delays, or live departure times until a licensed flight-status API is
-              connected.
+          {!provider.useLive ? (
+            <Alert variant="info" title="Live flight status is not connected">
+              We do not show gates, delays, or departure times until a flight-status provider
+              is configured. A lookup on this page is not a ticket and not a boarding update.
+              Ask our team if you need help with a booking we issued.
+            </Alert>
+          ) : !flight ? (
+            <Alert variant="info" title="Look up a flight">
+              Enter the flight number. The result comes from the connected provider and can
+              change. It is not a ticket.
             </Alert>
           ) : result ? (
             <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
@@ -79,9 +86,9 @@ export default async function FlightStatusPage({ searchParams }: Props) {
                   <dt className="text-[var(--color-muted)]">Provider</dt>
                   <dd className="font-medium">{result.providerCode}</dd>
                 </div>
-                {result.delayMinutes != null ? (
+                {result.delayMinutes != null && !result.isMock ? (
                   <div>
-                    <dt className="text-[var(--color-muted)]">Delay (sample)</dt>
+                    <dt className="text-[var(--color-muted)]">Reported delay</dt>
                     <dd className="font-medium">{result.delayMinutes} min</dd>
                   </div>
                 ) : null}
@@ -96,7 +103,7 @@ export default async function FlightStatusPage({ searchParams }: Props) {
               <Alert
                 variant={result.isMock ? "warning" : "info"}
                 className="mt-4"
-                title={result.isMock ? "MOCK — not live airline status" : "Live status"}
+                title="Provider status"
               >
                 {result.notice}
               </Alert>

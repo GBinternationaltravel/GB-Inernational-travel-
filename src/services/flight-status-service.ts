@@ -23,29 +23,50 @@ export function getFlightStatusProviderStatus() {
   };
 }
 
+const statusCache = new Map<string, { at: number; value: FlightStatusSnapshot | null }>();
+const STATUS_CACHE_MS = 90_000;
+
 export async function lookupFlightStatus(
   input: FlightStatusLookupInput,
 ): Promise<FlightStatusSnapshot | null> {
   const provider = getFlightStatusProvider();
   const env = getFlightStatusEnv();
-  const result = await provider.lookup(input);
-  if (!result) return null;
+  const cacheKey = `${provider.code}:${input.flightNumber}:${input.date ?? ""}:${input.origin ?? ""}:${input.destination ?? ""}`;
+  const cached = statusCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < STATUS_CACHE_MS) return cached.value;
 
-  if (provider.isMock) {
-    return {
-      ...result,
-      isMock: true,
-      dataLabel: result.dataLabel || "Sample flight status (not live)",
-      providerCode: provider.code,
-    };
+  const result = await provider.lookup(input);
+  if (!result) {
+    statusCache.set(cacheKey, { at: Date.now(), value: null });
+    return null;
   }
 
-  return {
-    ...result,
-    isMock: false,
-    dataLabel: result.dataLabel || "Live flight status",
-    providerCode: provider.code || env.configuredMode.toUpperCase(),
-  };
+  const snapshot: FlightStatusSnapshot = provider.isMock
+    ? {
+        ...result,
+        isMock: true,
+        dataLabel: result.dataLabel || "Sample flight status (not live)",
+        providerCode: provider.code,
+      }
+    : {
+        ...result,
+        isMock: false,
+        dataLabel: result.dataLabel || "Provider status",
+        providerCode: provider.code || env.configuredMode.toUpperCase(),
+      };
+  statusCache.set(cacheKey, { at: Date.now(), value: snapshot });
+  return snapshot;
+}
+
+/** Public lookup. A mock provider never supplies gates, delays, or a status. */
+export async function lookupPublicFlightStatus(
+  input: FlightStatusLookupInput,
+): Promise<FlightStatusSnapshot | null> {
+  const env = getFlightStatusEnv();
+  if (!env.useLive) return null;
+  const snapshot = await lookupFlightStatus(input);
+  if (!snapshot || snapshot.isMock) return null;
+  return snapshot;
 }
 
 export async function getBookingFlightStatus(
@@ -83,7 +104,7 @@ export async function getBookingFlightStatus(
       isMock: true,
       dataLabel: "NOT_CONFIGURED — no live status",
       notice:
-        "AviationStack credentials are not configured. Scheduled times from your booking are shown for reference only. Live status is never invented.",
+        "A flight-status provider is selected but has no API key. Scheduled times from your booking are shown for reference only. Live status is never invented.",
       checkedAt: new Date().toISOString(),
     };
   }
