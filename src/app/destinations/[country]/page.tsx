@@ -58,8 +58,8 @@ export default async function DestinationCountryPage({ params }: Params) {
       <Section>
         <h2 className="font-display text-2xl">Cities</h2>
         <p className="mt-2 max-w-2xl text-sm text-[var(--color-muted)]">
-          Choose a city guide for airport details, sample weather, travel tips, and flight
-          search links.
+          Choose a city guide for airport details, typical seasons, travel tips, and flight
+          search links. Mountain valleys without a published fare can be quoted on WhatsApp.
         </p>
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {cities.map((item) => (

@@ -50,6 +50,7 @@ export function FlightResultsExperience({
   isMock = true,
   supplierCode = "MOCK",
   supplierEnvironment = null,
+  datesWereFilled = false,
 }: {
   search: SearchFormValues;
   initialOffers: FlightOffer[];
@@ -59,6 +60,8 @@ export function FlightResultsExperience({
   isMock?: boolean;
   supplierCode?: string;
   supplierEnvironment?: string | null;
+  /** True when the link had no usable date and the page filled one in. */
+  datesWereFilled?: boolean;
 }) {
   const router = useRouter();
   const isRoundTrip = search.tripType === "ROUND_TRIP";
@@ -228,6 +231,18 @@ export function FlightResultsExperience({
 
   return (
     <div className="pb-24 lg:pb-10">
+      {datesWereFilled ? (
+        <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 lg:px-8">
+          <Alert variant="info">
+            This link had no departure date, so we used {formatFlightDate(search.departureDate)}
+            {search.tripType === "ROUND_TRIP" && search.returnDate
+              ? ` and return ${formatFlightDate(search.returnDate)}`
+              : ""}
+            . Change the dates if you need different days. These are published fares, not live
+            airline prices.
+          </Alert>
+        </div>
+      ) : null}
       <div className="sticky top-16 z-30 border-b border-[var(--color-border)] bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3">

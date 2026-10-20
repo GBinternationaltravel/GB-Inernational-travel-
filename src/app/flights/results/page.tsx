@@ -6,7 +6,8 @@ import { Alert } from "@/components/ui/alert";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { parseAndValidateSearchParams } from "@/lib/flights/search-params";
+import { parseAndValidateSearchParams, parseSearchParams } from "@/lib/flights/search-params";
+import { addIsoDays, defaultTravelDates } from "@/lib/flights/default-dates";
 import { searchFlights, toCustomerSupplierMessage, SupplierError } from "@/services/flight-service";
 import { getFlightSupplierEnv } from "@/config/flight-supplier";
 
@@ -35,7 +36,32 @@ export default async function FlightResultsPage({
   searchParams: SearchParams;
 }) {
   const params = await searchParams;
-  const parsed = parseAndValidateSearchParams(params);
+  const form = parseSearchParams(params);
+  let datesWereFilled = false;
+  if (!form.departureDate) {
+    const defaults = defaultTravelDates();
+    form.departureDate = defaults.departureDate;
+    datesWereFilled = true;
+  }
+  if (form.tripType === "ROUND_TRIP" && !form.returnDate) {
+    const candidate = defaultTravelDates().returnDate;
+    form.returnDate = candidate > form.departureDate ? candidate : addIsoDays(form.departureDate, 7);
+    datesWereFilled = true;
+  }
+  if (form.tripType !== "ROUND_TRIP") {
+    form.returnDate = "";
+  }
+  const parsed = parseAndValidateSearchParams({
+    trip: form.tripType === "ONE_WAY" ? "oneway" : form.tripType === "MULTI_CITY" ? "multicity" : "roundtrip",
+    from: form.origin,
+    to: form.destination,
+    departure: form.departureDate,
+    return: form.returnDate || undefined,
+    adults: String(form.adults),
+    children: form.children ? String(form.children) : undefined,
+    infants: form.infants ? String(form.infants) : undefined,
+    cabin: form.cabinClass.toLowerCase(),
+  });
   const flightEnv = getFlightSupplierEnv();
 
   if (!parsed.success) {
@@ -92,6 +118,7 @@ export default async function FlightResultsPage({
     <Container className="px-0 sm:px-0 lg:px-0">
       <FlightResultsExperience
         search={parsed.form}
+        datesWereFilled={datesWereFilled}
         initialOffers={offers}
         returnOffers={returnOffers}
         loadError={loadError}

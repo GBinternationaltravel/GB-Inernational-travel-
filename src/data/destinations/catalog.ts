@@ -1,4 +1,5 @@
 import type { FaqItem } from "@/types/content";
+import { siteConfig } from "@/config/site";
 
 export type DestinationRoute = {
   fromIata: string;
@@ -26,6 +27,12 @@ export type DestinationCity = {
     from?: string;
     to: string;
   };
+  /** False for places with no commercial airport (Hunza). */
+  hasCommercialAirport: boolean;
+  /** Typical seasons. Not a live forecast. */
+  climateNote?: string;
+  /** Tour list filter, e.g. SKARDU. Only when that tour destination exists. */
+  tourQuery?: string;
 };
 
 export type DestinationCountry = {
@@ -43,7 +50,13 @@ const defaultVisa = (cityName: string, isDomestic: boolean) =>
 const city = (
   input: Omit<
     DestinationCity,
-    "faqs" | "bestTimeToVisit" | "visaInfo" | "airportName" | "popularRoutes" | "relatedCitySlugs"
+    | "faqs"
+    | "bestTimeToVisit"
+    | "visaInfo"
+    | "airportName"
+    | "popularRoutes"
+    | "relatedCitySlugs"
+    | "hasCommercialAirport"
   > &
     Partial<
       Pick<
@@ -54,12 +67,17 @@ const city = (
         | "airportName"
         | "popularRoutes"
         | "relatedCitySlugs"
+        | "hasCommercialAirport"
+        | "climateNote"
+        | "tourQuery"
       >
     >,
 ): DestinationCity => {
   const from = input.relatedFlightSearch.from ?? "ISB";
+  const hasAirport = input.hasCommercialAirport !== false;
   return {
     ...input,
+    hasCommercialAirport: hasAirport,
     airportName: input.airportName ?? `${input.cityName} International Airport`,
     bestTimeToVisit:
       input.bestTimeToVisit ??
@@ -79,13 +97,15 @@ const city = (
       {
         id: `${input.citySlug}-flights`,
         question: `Can I book flights to ${input.cityName} from Pakistan?`,
-        answer: `Yes. Search flights to ${input.cityName} (${input.iataCode}) from major Pakistan cities on GB International Travel. Live airline inventory depends on the configured flight supplier.`,
+        answer: hasAirport
+          ? `Search the fares ${siteConfig.name} publishes to ${input.cityName} (${input.iataCode}). If that route is not on the list, ask us on WhatsApp and we will check it. Published fares are not live airline seats and are confirmed when you request a booking.`
+          : `${input.cityName} does not have a commercial airport. Ask ${siteConfig.name} on WhatsApp for the usual way to get there, including flights to a nearby airport.`,
         category: "flights",
       },
       {
         id: `${input.citySlug}-weather`,
-        question: `Is the weather on the ${input.cityName} page live?`,
-        answer: `Not yet. Destination weather uses a clearly labeled sample provider until a licensed weather API is connected.`,
+        question: `Does the ${input.cityName} page show a live weather forecast?`,
+        answer: `No. The page describes typical seasons, not today's weather. Check a forecast closer to your travel date, and ask us if a flight depends on the weather.`,
         category: "weather",
       },
       {
@@ -168,8 +188,101 @@ export const destinationCities: DestinationCity[] = [
       { fromIata: "KHI", fromCity: "Karachi", label: "Karachi → Islamabad" },
       { fromIata: "DXB", fromCity: "Dubai", label: "Dubai ↔ Islamabad" },
     ],
-    relatedCitySlugs: ["lahore", "karachi", "dubai", "istanbul"],
+    relatedCitySlugs: ["lahore", "karachi", "dubai", "istanbul", "gilgit", "skardu"],
     relatedFlightSearch: { from: "LHE", to: "ISB" },
+  }),
+  // TODO(owner): verify seasonal wording, road advice and which airlines you currently sell
+  // before using these three pages in ads. Facts below are general public knowledge, not a fare sheet.
+  city({
+    citySlug: "gilgit",
+    cityName: "Gilgit",
+    countrySlug: "pakistan",
+    countryName: "Pakistan",
+    iataCode: "GIL",
+    airportName: "Gilgit Airport",
+    isDomestic: true,
+    summary:
+      "Gilgit is the main town of Gilgit-Baltistan and a common starting point for Hunza, Naltar and the Karakoram Highway. Flights, when we publish them, are usually searched from Islamabad.",
+    bestFor: "Reaching the northern valleys, and tours that start in Gilgit.",
+    bestTimeToVisit:
+      "April to June and September to October are the months most travellers choose. Winter is cold, and flights can be delayed or cancelled when the weather closes the valley.",
+    climateNote:
+      "Gilgit sits in a dry mountain valley. Summers are warm in town and much cooler in the side valleys. This is a typical seasonal note, not today's forecast.",
+    travelTips: [
+      "Search Islamabad (ISB) to Gilgit (GIL) for the fares we publish. If nothing is listed, ask us for a quote.",
+      "Gilgit Airport is in the valley. Bad weather can stop flights even when the rest of Pakistan is clear.",
+      "Hunza and Naltar are reached by road from Gilgit. Ask us about the current road before you fix tour dates.",
+      "Domestic flights need the identity document your airline asks for. Confirm that with the airline before you travel.",
+    ],
+    popularRoutes: [
+      { fromIata: "ISB", fromCity: "Islamabad", label: "Islamabad → Gilgit" },
+    ],
+    relatedCitySlugs: ["skardu", "hunza", "islamabad"],
+    relatedFlightSearch: { from: "ISB", to: "GIL" },
+    tourQuery: "GILGIT",
+    visaInfo:
+      "Domestic travel to Gilgit uses the identity document the airline requires, usually an original CNIC for Pakistani travellers. Foreign nationals should confirm airline and local permit rules before they travel.",
+  }),
+  city({
+    citySlug: "skardu",
+    cityName: "Skardu",
+    countrySlug: "pakistan",
+    countryName: "Pakistan",
+    iataCode: "KDU",
+    airportName: "Skardu Airport",
+    isDomestic: true,
+    summary:
+      "Skardu is the main town of Baltistan and the usual base for Shigar, Khaplu and, in season, Deosai. Flights we publish are generally between Islamabad and Skardu.",
+    bestFor: "Baltistan trips, lakes and mountain tours that start in Skardu.",
+    bestTimeToVisit:
+      "May to October is the broad window for tourism. Deosai is a summer route and is not a year-round road. Winter is very cold, and flights are often affected by weather.",
+    climateNote:
+      "Skardu is high and dry. Days can be mild in summer and nights stay cool. Winter snow and cloud are a normal reason for flight changes. This is not a live forecast.",
+    travelTips: [
+      "Search Islamabad (ISB) to Skardu (KDU). A route with no published fare is a quote, not an empty promise of a seat.",
+      "Allow a spare day on either side of a Skardu flight. Weather diversions are common and are decided by the airline.",
+      "Deosai and some side valleys close with snow. Ask us before you plan those drives.",
+      "There is no need to invent a connection through another city unless we have published one.",
+    ],
+    popularRoutes: [
+      { fromIata: "ISB", fromCity: "Islamabad", label: "Islamabad → Skardu" },
+    ],
+    relatedCitySlugs: ["gilgit", "hunza", "islamabad"],
+    relatedFlightSearch: { from: "ISB", to: "KDU" },
+    tourQuery: "SKARDU",
+    visaInfo:
+      "Domestic travel to Skardu uses the identity document the airline requires, usually an original CNIC for Pakistani travellers. Confirm the rule with the airline before departure.",
+  }),
+  city({
+    citySlug: "hunza",
+    cityName: "Hunza",
+    countrySlug: "pakistan",
+    countryName: "Pakistan",
+    iataCode: "GIL",
+    airportName: "No commercial airport in Hunza",
+    hasCommercialAirport: false,
+    isDomestic: true,
+    summary:
+      "Hunza is a valley north of Gilgit, with Karimabad as the usual base. There is no commercial airport in Hunza. Travellers fly to Gilgit when a fare is published, then continue by road.",
+    bestFor: "Valley stays, spring blossom and autumn colour, reached via Gilgit.",
+    bestTimeToVisit:
+      "April and May are known for blossom, and September and October for clearer autumn days. Winter is cold, and high roads can close. Ask us before you lock dates.",
+    climateNote:
+      "Hunza is a high valley. Spring and autumn are the seasons most visitors aim for. Summer is busier. This note is not a live weather report.",
+    travelTips: [
+      "Do not search for a Hunza airport code. The nearest airport we can quote is Gilgit (GIL).",
+      "The road from Gilgit to Hunza follows the Karakoram Highway. Time on the road changes with conditions, so ask us for the current journey rather than a fixed duration.",
+      "Khunjerab Pass, further north, is seasonal. It is not part of a normal Hunza stay unless you plan for it.",
+      "Tour requests are planned with our team. A page on this website is not a confirmed vehicle or hotel.",
+    ],
+    popularRoutes: [
+      { fromIata: "ISB", fromCity: "Islamabad", label: "Islamabad → Gilgit (then road to Hunza)" },
+    ],
+    relatedCitySlugs: ["gilgit", "skardu", "islamabad"],
+    relatedFlightSearch: { from: "ISB", to: "GIL" },
+    tourQuery: "HUNZA",
+    visaInfo:
+      "Hunza is inside Pakistan. The flight, if you take one, is domestic as far as Gilgit, and uses the identity document that airline requires. Foreign nationals should confirm any local permit rules before travel.",
   }),
   city({
     citySlug: "dubai",
@@ -419,8 +532,8 @@ export const destinationCountries: DestinationCountry[] = [
     countrySlug: "pakistan",
     countryName: "Pakistan",
     summary:
-      "Domestic flight destinations across Pakistan, including major hubs and regional cities.",
-    cities: ["karachi", "lahore", "islamabad"],
+      "Domestic flight destinations across Pakistan, including major hubs and Gilgit-Baltistan (Gilgit, Skardu and Hunza).",
+    cities: ["karachi", "lahore", "islamabad", "gilgit", "skardu", "hunza"],
   },
   {
     countrySlug: "united-arab-emirates",

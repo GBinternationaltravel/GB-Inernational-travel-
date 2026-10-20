@@ -1,20 +1,32 @@
-import { Alert } from "@/components/ui/alert";
+import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { WeatherForecast } from "@/types/weather";
+
+function WeatherFallback({ fallback }: { fallback?: ReactNode }) {
+  if (fallback) return <>{fallback}</>;
+  return (
+    <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 sm:p-5">
+      <h3 className="text-xl font-semibold text-[var(--color-navy)]">Weather</h3>
+      <p className="mt-2 text-sm leading-relaxed text-[var(--color-muted)]">
+        A live forecast is not connected on this page. Check a weather service closer to your
+        travel date, and ask us if a mountain flight depends on the weather.
+      </p>
+    </section>
+  );
+}
 
 export function WeatherWidget({
   forecast,
   compact = false,
+  fallback,
 }: {
   forecast: WeatherForecast | null;
   compact?: boolean;
+  /** Shown when there is no live forecast. Rendered on the server. */
+  fallback?: ReactNode;
 }) {
-  if (!forecast) {
-    return (
-      <Alert variant="info" title="Weather unavailable">
-        No weather snapshot is available for this location yet.
-      </Alert>
-    );
+  if (!forecast || forecast.isMock) {
+    return <WeatherFallback fallback={fallback} />;
   }
 
   const temperature =
@@ -37,11 +49,7 @@ export function WeatherWidget({
           </h3>
           <p className="mt-1 text-sm text-[var(--color-sky)]">{forecast.current.condition}</p>
         </div>
-        <Badge variant={forecast.isMock ? "warning" : "info"}>
-          {forecast.isMock
-            ? forecast.dataLabel || "Demo Weather Data"
-            : forecast.dataLabel || "Live weather"}
-        </Badge>
+        <Badge variant="info">{forecast.dataLabel || "Live weather"}</Badge>
       </div>
 
       <div className="mt-4 flex flex-wrap items-end gap-6">
@@ -82,11 +90,6 @@ export function WeatherWidget({
         <p className="mt-4 text-sm text-[var(--color-muted)]">{forecast.travelSummary}</p>
       ) : null}
 
-      {forecast.isMock ? (
-        <p className="mt-3 text-xs font-medium text-[var(--color-warning)]">
-          Demo Weather Data — not live meteorological information.
-        </p>
-      ) : null}
     </div>
   );
 }

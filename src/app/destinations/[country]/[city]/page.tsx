@@ -8,7 +8,10 @@ import {
   DestinationFaqList,
   DestinationSearchCta,
   RelatedDestinations,
+  RelatedTours,
+  SeasonalTravelNote,
 } from "@/components/destinations/destination-sections";
+import { listPublishedTours } from "@/services/tour-service";
 import {
   destinationCities,
   destinationPath,
@@ -42,8 +45,14 @@ export default async function DestinationCityPage({ params }: Params) {
   const destination = getCityBySlugs(country, city);
   if (!destination) notFound();
 
-  const weather = await getDestinationWeather(destination.iataCode);
+  const weather = destination.hasCommercialAirport
+    ? await getDestinationWeather(destination.iataCode)
+    : null;
+  const liveWeather = weather && !weather.isMock ? weather : null;
   const related = getRelatedCities(destination);
+  const tours = destination.tourQuery
+    ? await listPublishedTours({ destination: destination.tourQuery }).catch(() => [])
+    : [];
   const schemas = destinationCityJsonLd(destination);
 
   return (
@@ -83,17 +92,23 @@ export default async function DestinationCityPage({ params }: Params) {
             </section>
 
             <section>
-              <h2 className="font-display text-2xl">Airport</h2>
-              <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-                <div>
-                  <dt className="text-[var(--color-muted)]">Airport</dt>
-                  <dd className="font-medium">{destination.airportName}</dd>
-                </div>
-                <div>
-                  <dt className="text-[var(--color-muted)]">IATA code</dt>
-                  <dd className="font-medium">{destination.iataCode}</dd>
-                </div>
-              </dl>
+              <h2 className="font-display text-2xl">
+                {destination.hasCommercialAirport ? "Airport" : "How to get there"}
+              </h2>
+              {destination.hasCommercialAirport ? (
+                <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                  <div>
+                    <dt className="text-[var(--color-muted)]">Airport</dt>
+                    <dd className="font-medium">{destination.airportName}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[var(--color-muted)]">IATA code</dt>
+                    <dd className="font-medium">{destination.iataCode}</dd>
+                  </div>
+                </dl>
+              ) : (
+                <p className="mt-3 text-sm text-[var(--color-muted)]">{destination.airportName}. {destination.summary}</p>
+              )}
             </section>
 
             <section>
@@ -133,12 +148,21 @@ export default async function DestinationCityPage({ params }: Params) {
               <p className="mt-3 text-sm text-[var(--color-muted)]">{destination.visaInfo}</p>
             </section>
 
+            <RelatedTours
+              city={destination}
+              tours={tours.map((tour) => ({
+                slug: tour.slug,
+                name: tour.name,
+                durationDays: tour.durationDays,
+              }))}
+            />
             <DestinationFaqList faqs={destination.faqs} />
             <RelatedDestinations cities={related} />
           </div>
 
           <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-            <WeatherWidget forecast={weather} />
+            <SeasonalTravelNote city={destination} />
+            {liveWeather ? <WeatherWidget forecast={liveWeather} /> : null}
             <DestinationSearchCta city={destination} />
           </aside>
         </div>
