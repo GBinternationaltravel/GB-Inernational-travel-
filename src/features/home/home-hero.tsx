@@ -176,14 +176,16 @@ export function HomeHero({ faresUpdatedAt = null }: { faresUpdatedAt?: string | 
                 href={whatsappHref(siteConfig.contactWhatsApp, whatsappMessage)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center gap-1.5 underline decoration-[#c9a96e]/70 underline-offset-4"
+                className="inline-flex min-h-11 items-center gap-1.5 underline decoration-[#c9a96e]/70 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                aria-label={`${siteConfig.contactWhatsAppLabel} ${siteConfig.contactWhatsApp}`}
               >
                 <MessageCircle className="h-3.5 w-3.5 text-[#c9a96e]" strokeWidth={1.6} aria-hidden />
                 {siteConfig.contactWhatsAppLabel}
               </a>
               <a
                 href={telHref(siteConfig.contactPhone)}
-                className="inline-flex min-h-11 items-center gap-1.5 underline decoration-white/40 underline-offset-4"
+                className="inline-flex min-h-11 items-center gap-1.5 underline decoration-white/40 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                aria-label={`${siteConfig.contactPhoneLabel} ${siteConfig.contactPhone}`}
               >
                 <Phone className="h-3.5 w-3.5 text-[#c9a96e]" strokeWidth={1.6} aria-hidden />
                 {siteConfig.contactPhoneLabel}
