@@ -176,14 +176,16 @@ export function HomeHero({ faresUpdatedAt = null }: { faresUpdatedAt?: string | 
                 href={whatsappHref(siteConfig.contactWhatsApp, whatsappMessage)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center gap-1.5 underline decoration-[#c9a96e]/70 underline-offset-4"
+                className="inline-flex min-h-11 items-center gap-1.5 underline decoration-[#c9a96e]/70 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                aria-label={`${siteConfig.contactWhatsAppLabel} ${siteConfig.contactWhatsApp}`}
               >
                 <MessageCircle className="h-3.5 w-3.5 text-[#c9a96e]" strokeWidth={1.6} aria-hidden />
                 {siteConfig.contactWhatsAppLabel}
               </a>
               <a
                 href={telHref(siteConfig.contactPhone)}
-                className="inline-flex min-h-11 items-center gap-1.5 underline decoration-white/40 underline-offset-4"
+                className="inline-flex min-h-11 items-center gap-1.5 underline decoration-white/40 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                aria-label={`${siteConfig.contactPhoneLabel} ${siteConfig.contactPhone}`}
               >
                 <Phone className="h-3.5 w-3.5 text-[#c9a96e]" strokeWidth={1.6} aria-hidden />
                 {siteConfig.contactPhoneLabel}
@@ -238,25 +240,25 @@ const trustPoints: {
   href?: string;
 }[] = [
   {
-    icon: ReceiptText,
-    title: "Clear PKR fares",
-    text: "The amount shown includes taxes and our service charge. Confirm the fare with us before you travel.",
-  },
-  {
     icon: MessageCircle,
     title: "Real people on WhatsApp",
-    text: `Speak to our team directly on ${siteConfig.contactWhatsApp}.`,
+    text: `Message ${siteConfig.contactWhatsAppLabel} ${siteConfig.contactWhatsApp}. A person on our team replies.`,
     href: whatsappHref(siteConfig.contactWhatsApp, whatsappMessage),
   },
   {
+    icon: ReceiptText,
+    title: "Clear PKR fares",
+    text: "Published fares are in PKR. The figure is the amount to confirm with us. It is not a live airline price.",
+  },
+  {
     icon: BellRing,
-    title: "E-ticket and reminders",
-    text: "After we issue your e-ticket, we aim to send departure reminders. Please also check your airline’s timings.",
+    title: "Manual verification before ticketing",
+    text: "We check availability and the fare before an e-ticket is issued. A search result is not a ticket.",
   },
   {
     icon: Compass,
-    title: "Flights, tours and visas",
-    text: "Domestic and international flights, Northern tours and visa help.",
+    title: siteConfig.responseTime,
+    text: "This is the reply time the owner still needs to confirm. Until then it stays a placeholder.",
   },
 ];
 

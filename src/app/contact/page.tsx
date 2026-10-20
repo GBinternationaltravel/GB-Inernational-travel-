@@ -6,6 +6,7 @@ import { Section } from "@/components/ui/section";
 import { Card } from "@/components/ui/card";
 import { siteConfig } from "@/config/site";
 import { ContactForm } from "@/features/contact/contact-form";
+import { CallbackForm } from "@/features/contact/callback-form";
 import { mailtoHref, telHref, whatsappHref } from "@/lib/contact-links";
 import { buildMetadata } from "@/lib/seo/metadata";
 
@@ -126,6 +127,11 @@ export default function ContactPage() {
               Write your message below, then choose WhatsApp or email to send it to our team.
             </p>
             <ContactForm />
+            <h3 className="mt-10 text-lg font-semibold text-[var(--color-navy)]">Ask for a call</h3>
+            <p className="mt-2 mb-4 text-sm text-[var(--color-muted)]">
+              Leave your number and our team will call you. This is not a booking and not a ticket.
+            </p>
+            <CallbackForm />
           </Card>
         </div>
       </Section>

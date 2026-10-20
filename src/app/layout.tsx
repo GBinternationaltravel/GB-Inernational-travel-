@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { ToastProvider } from "@/components/ui/toast";
@@ -21,6 +23,8 @@ const playfair = Playfair_Display({
   variable: "--font-brand",
   display: "swap",
   weight: ["600", "700", "800"],
+  preload: false,
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = buildMetadata({
@@ -58,6 +62,8 @@ export default function RootLayout({
             </div>
           </ToastProvider>
         </AuthProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

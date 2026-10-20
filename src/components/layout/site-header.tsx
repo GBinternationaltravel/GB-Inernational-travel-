@@ -50,7 +50,7 @@ export function SiteHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm text-white/80 transition-colors hover:text-white"
+              className="inline-flex min-h-11 items-center text-sm text-white/80 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               {item.label}
             </Link>
@@ -90,27 +90,24 @@ export function SiteHeader() {
 
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-white/10 lg:hidden"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:hidden"
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
+          aria-controls="mobile-navigation"
           onClick={() => setOpen((value) => !value)}
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </Container>
 
-      <div
-        className={cn(
-          "border-t border-white/10 bg-[var(--color-navy)] lg:hidden",
-          open ? "block" : "hidden",
-        )}
-      >
+      {open ? (
+      <div id="mobile-navigation" className="border-t border-white/10 bg-[var(--color-navy)] lg:hidden">
         <Container className="flex max-h-[min(80vh,32rem)] flex-col gap-1 overflow-y-auto py-3">
           {navigation.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-[var(--radius-md)] px-3 py-2.5 text-sm text-white/90 hover:bg-white/10"
+              className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] px-3 text-sm text-white/90 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
               onClick={() => setOpen(false)}
             >
               {item.label}
@@ -122,7 +119,7 @@ export function SiteHeader() {
               {session?.user?.role && session.user.role !== "CUSTOMER" ? (
                 <Link
                   href="/admin"
-                  className="rounded-[var(--radius-md)] px-3 py-2.5 text-sm text-white/90 hover:bg-white/10"
+                  className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] px-3 text-sm text-white/90 hover:bg-white/10"
                   onClick={() => setOpen(false)}
                 >
                   Admin
@@ -130,21 +127,21 @@ export function SiteHeader() {
               ) : null}
               <Link
                 href="/my-trips"
-                className="rounded-[var(--radius-md)] px-3 py-2.5 text-sm text-white/90 hover:bg-white/10"
+                className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] px-3 text-sm text-white/90 hover:bg-white/10"
                 onClick={() => setOpen(false)}
               >
                 My Trips
               </Link>
               <Link
                 href="/account"
-                className="rounded-[var(--radius-md)] px-3 py-2.5 text-sm text-white/90 hover:bg-white/10"
+                className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] px-3 text-sm text-white/90 hover:bg-white/10"
                 onClick={() => setOpen(false)}
               >
                 Account
               </Link>
               <button
                 type="button"
-                className="rounded-[var(--radius-md)] px-3 py-2.5 text-left text-sm text-white/90 hover:bg-white/10"
+                className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] px-3 text-left text-sm text-white/90 hover:bg-white/10"
                 onClick={() => {
                   setOpen(false);
                   void signOut({ callbackUrl: "/" });
@@ -156,13 +153,14 @@ export function SiteHeader() {
           ) : null}
           <Link
             href="/flights"
-            className="mt-2 rounded-[var(--radius-md)] bg-[var(--color-emerald)] px-3 py-3 text-center text-sm font-semibold text-white"
+            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-emerald)] px-3 text-center text-sm font-semibold text-white"
             onClick={() => setOpen(false)}
           >
             Search Flights
           </Link>
         </Container>
       </div>
+      ) : null}
     </header>
   );
 }

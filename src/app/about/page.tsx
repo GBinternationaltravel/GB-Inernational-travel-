@@ -24,14 +24,15 @@ export default function AboutPage() {
       <Section>
         <div className="max-w-3xl space-y-4 text-[var(--color-muted)]">
           <p>
-            GB International Travel is a Pakistan-based agency. This website lets you search the
-            flights we publish and contact our team. We confirm bookings and issue tickets
-            manually. Online card payment and live airline connections are not enabled yet.
+            {siteConfig.name} is a Pakistan-based agency. This website lets you search the flights
+            we publish and contact our team. We confirm bookings and issue tickets manually. Online
+            card payment is not available.
           </p>
-          <p>
-            We do not invent company history, customer reviews, or performance statistics. Those
-            details will be published only when verified.
-          </p>
+          {siteConfig.legalName ? <p>Legal name: {siteConfig.legalName}</p> : null}
+          {siteConfig.officeAddress ? <p>Office: {siteConfig.officeAddress}</p> : null}
+          {siteConfig.licenceNumber ? <p>Licence: {siteConfig.licenceNumber}</p> : null}
+          {siteConfig.accreditation ? <p>Accreditation: {siteConfig.accreditation}</p> : null}
+          {siteConfig.reviewsSummary ? <p>Reviews: {siteConfig.reviewsSummary}</p> : null}
         </div>
       </Section>
     </>

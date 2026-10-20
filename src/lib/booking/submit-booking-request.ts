@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import { siteConfig } from "@/config/site";
 import { getNotificationProvider } from "@/providers/registry";
 import { writeAuditLog } from "@/lib/security/audit";
+import { logServerFailure } from "@/lib/logging/server-failure";
 import type { BookingRequestInput } from "@/lib/validations/booking-request";
 
 const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -81,7 +82,8 @@ export async function deliverBookingRequest(input: {
       body,
     });
     return { emailed: result.success };
-  } catch {
+  } catch (error) {
+    logServerFailure("booking-request", error);
     return { emailed: false };
   }
 }

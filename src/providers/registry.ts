@@ -18,6 +18,7 @@ import { MultiChannelNotificationRouter } from "@/providers/notifications/multi-
 import { MockFlightStatusProvider } from "@/providers/flight-status/mock-flight-status-provider";
 import { CommercialFlightStatusProvider } from "@/providers/flight-status/commercial-flight-status-provider";
 import { AviationStackFlightStatusProvider } from "@/providers/flight-status/aviationstack-flight-status-provider";
+import { AeroDataBoxFlightStatusProvider } from "@/providers/flight-status/aerodatabox-flight-status-provider";
 import { MockPaymentProvider } from "@/providers/payments/mock-payment-provider";
 import { SafepayPaymentProvider } from "@/providers/payments/safepay-payment-provider";
 import { getPaymentEnv } from "@/config/payment";
@@ -95,9 +96,11 @@ export function getNotificationRouter(): ChannelNotificationRouter {
 export function getFlightStatusProvider(): FlightStatusProvider {
   if (!flightStatusProvider) {
     const env = getFlightStatusEnv();
-    if (env.useLive) {
+    if (env.useLive && env.mode === "aerodatabox") {
+      flightStatusProvider = new AeroDataBoxFlightStatusProvider();
+    } else if (env.useLive) {
       flightStatusProvider = new AviationStackFlightStatusProvider();
-    } else if (env.notConfigured || env.configuredMode === "aviationstack") {
+    } else if (env.notConfigured || env.configuredMode === "aviationstack" || env.configuredMode === "aerodatabox") {
       // Selected commercial provider without credentials — never invent live status.
       flightStatusProvider = new CommercialFlightStatusProvider();
     } else {

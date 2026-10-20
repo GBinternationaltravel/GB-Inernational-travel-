@@ -66,6 +66,17 @@ export function organizationJsonLd() {
       name: "Pakistan",
     },
     currenciesAccepted: siteConfig.currency,
+    telephone: siteConfig.contactPhone,
+    email: siteConfig.contactEmail,
+    ...(siteConfig.officeAddress
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: siteConfig.officeAddress,
+            addressCountry: "PK",
+          },
+        }
+      : {}),
   };
 }
 

@@ -10,18 +10,57 @@ import { siteConfig } from "@/config/site";
 import { whatsappHref } from "@/lib/contact-links";
 import { cn } from "@/lib/utils";
 import { foundationFaqs } from "@/data/mock/content";
+import { breadcrumbJsonLd, faqJsonLd } from "@/lib/seo/metadata";
 import { getPublishedFaresUpdatedAt } from "@/providers/flights/inventory-flight-supplier";
+import { latestPublicTravelUpdates, listPublicTravelUpdates } from "@/lib/travel-updates/public-feed";
 
 export async function HomePage() {
-  const faresUpdatedAt = await getPublishedFaresUpdatedAt();
+  const [faresUpdatedAt, travelNotes] = await Promise.all([
+    getPublishedFaresUpdatedAt(),
+    listPublicTravelUpdates().then((items) => latestPublicTravelUpdates(items, 3)),
+  ]);
+
+  const homeJsonLd = [
+    breadcrumbJsonLd([{ name: "Home", path: "/" }]),
+    faqJsonLd(foundationFaqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
+  ];
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }} />
       <HomeHero faresUpdatedAt={faresUpdatedAt} />
       <HomeTrustStrip />
 
       <HomeSignatureDestinations />
       <HomePopularRoutes />
+
+      <section aria-labelledby="travel-updates-title" className="bg-white">
+        <Container className="py-16 sm:py-20">
+          <div className="flex items-end justify-between gap-4">
+            <h2 id="travel-updates-title" className={cn(homeDisplayFont.className, "text-3xl text-[var(--color-navy)]")}>
+              Latest travel notes
+            </h2>
+            <Link href="/travel-updates" className="text-sm font-medium text-[var(--color-brand)]">
+              All updates
+            </Link>
+          </div>
+          <ul className="mt-6 grid gap-4 md:grid-cols-3">
+            {travelNotes.map((note) => (
+              <li key={note.slug} className="rounded-xl border border-[var(--color-border)] p-4">
+                <p className="text-xs font-semibold tracking-wide text-[var(--color-muted)] uppercase">
+                  {note.category}
+                </p>
+                <h3 className="mt-2 font-display text-xl">
+                  <Link href={`/travel-updates/${note.slug}`} className="hover:underline">
+                    {note.title}
+                  </Link>
+                </h3>
+                <p className="mt-2 text-sm text-[var(--color-muted)]">{note.summary}</p>
+              </li>
+            ))}
+          </ul>
+        </Container>
+      </section>
 
       <section aria-labelledby="companion-title" className="bg-[#faf8f4]">
         <Container className="grid gap-12 py-20 sm:py-24 lg:grid-cols-12 lg:gap-16">

@@ -150,10 +150,16 @@ export default function RefundPolicyPage() {
       description="What can be refunded, how long it takes and how to request a refund for your booking."
       path="/refund-policy"
       intro={
-        <p>
-          This policy explains how refunds work for bookings made with GB International Travel. It
-          should be read with our <LegalLink href="/terms">Terms &amp; Conditions</LegalLink>.
-        </p>
+        <>
+          <p>
+            Suggested wording for the owner to confirm. The timings and fee treatment below are not
+            a newly verified company rule. Ask us about your ticket before you cancel or expect a
+            refund.
+          </p>
+          <p>
+            Read this with our <LegalLink href="/terms">Terms &amp; Conditions</LegalLink>.
+          </p>
+        </>
       }
       sections={sections}
     />

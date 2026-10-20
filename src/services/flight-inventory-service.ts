@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { writeAuditLog } from "@/lib/security/audit";
 import { AdminServiceError } from "@/services/admin-booking-service";
 import { compactFlightNumber, splitFlightNumber } from "@/lib/flights/flight-number";
+import { revalidatePublishedFares } from "@/lib/cache/revalidate-public-fares";
 import {
   INVENTORY_SUPPLIER_CODE,
   WEEKDAY_LABELS,
@@ -287,6 +288,7 @@ export async function createInventoryFlight(input: { actorId: string; data: Inve
       seats: meta.seats,
     },
   });
+  revalidatePublishedFares();
   return flight;
 }
 
@@ -354,6 +356,7 @@ export async function updateInventoryFlight(input: {
       isActive: meta.isActive,
     },
   });
+  revalidatePublishedFares();
   return updated;
 }
 
@@ -375,6 +378,10 @@ export async function setInventoryFlightActive(input: {
     where: { key: inventoryMetaKey(input.id) },
     data: { value: next as unknown as Prisma.InputJsonValue },
   });
+  await prisma.flight.update({
+    where: { id: input.id },
+    data: { providerCode: INVENTORY_SUPPLIER_CODE },
+  });
   await writeAuditLog({
     userId: input.actorId,
     action: "CMS_FLIGHT_ACTIVE",
@@ -382,6 +389,7 @@ export async function setInventoryFlightActive(input: {
     entityId: input.id,
     metadata: { isActive: input.isActive },
   });
+  revalidatePublishedFares();
   return { id: input.id, isActive: input.isActive };
 }
 
