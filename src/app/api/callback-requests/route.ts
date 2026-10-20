@@ -4,6 +4,7 @@ import { getNotificationProvider } from "@/providers/registry";
 import { writeAuditLog } from "@/lib/security/audit";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { callbackRequestSchema } from "@/lib/validations/callback-request";
+import { logServerFailure } from "@/lib/logging/server-failure";
 
 export async function POST(request: Request) {
   const ip =
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
       body: text,
     });
   } catch (error) {
-    console.error("[callback] email failed", error instanceof Error ? error.message : "failed");
+    logServerFailure("callback", error);
   }
 
   return NextResponse.json({ ok: true });
