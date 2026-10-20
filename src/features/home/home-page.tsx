@@ -10,6 +10,7 @@ import { siteConfig } from "@/config/site";
 import { whatsappHref } from "@/lib/contact-links";
 import { cn } from "@/lib/utils";
 import { foundationFaqs } from "@/data/mock/content";
+import { breadcrumbJsonLd, faqJsonLd } from "@/lib/seo/metadata";
 import { getPublishedFaresUpdatedAt } from "@/providers/flights/inventory-flight-supplier";
 import { latestPublicTravelUpdates, listPublicTravelUpdates } from "@/lib/travel-updates/public-feed";
 
@@ -19,8 +20,14 @@ export async function HomePage() {
     listPublicTravelUpdates().then((items) => latestPublicTravelUpdates(items, 3)),
   ]);
 
+  const homeJsonLd = [
+    breadcrumbJsonLd([{ name: "Home", path: "/" }]),
+    faqJsonLd(foundationFaqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
+  ];
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }} />
       <HomeHero faresUpdatedAt={faresUpdatedAt} />
       <HomeTrustStrip />
 

@@ -24,7 +24,7 @@ const destinations: Destination[] = [
   {
     name: "Skardu",
     offer: "Flights · Tours",
-    href: "/tours",
+    href: "/destinations/pakistan/skardu",
     image: "/images/destinations/skardu.webp",
     alt: "Katpana cold desert near Skardu with snow-capped peaks",
     credit: {
@@ -37,7 +37,7 @@ const destinations: Destination[] = [
   {
     name: "Hunza",
     offer: "Tours",
-    href: "/tours",
+    href: "/destinations/pakistan/hunza",
     image: "/images/destinations/hunza.webp",
     alt: "Hunza Valley with poplar trees and the Hunza River",
     credit: {
@@ -50,7 +50,7 @@ const destinations: Destination[] = [
   {
     name: "Gilgit",
     offer: "Flights · Tours",
-    href: "/tours",
+    href: "/destinations/pakistan/gilgit",
     image: "/images/destinations/gilgit.webp",
     alt: "Mountains above Gilgit town",
     credit: {
@@ -129,8 +129,10 @@ export function HomeSignatureDestinations() {
                   src={destination.image}
                   alt={destination.alt}
                   fill
-                  sizes="(min-width: 1024px) 220px, (min-width: 640px) 33vw, 68vw"
-                  quality={70}
+                  sizes="(min-width: 1024px) 18vw, (min-width: 640px) 30vw, 68vw"
+                  quality={65}
+                  loading="lazy"
+                  fetchPriority="low"
                   className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.05] motion-reduce:transition-none"
                 />
                 <span

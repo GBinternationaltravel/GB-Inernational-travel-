@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { PREFILL_ROUTE_EVENT } from "@/features/flights/components/flight-search-widget";
@@ -8,10 +9,10 @@ import { buildResultsHref, defaultSearchFormValues } from "@/lib/flights/search-
 import { cn } from "@/lib/utils";
 
 const routes = [
-  { origin: "ISB", destination: "KDU", from: "Islamabad", to: "Skardu", kind: "Domestic" },
-  { origin: "ISB", destination: "GIL", from: "Islamabad", to: "Gilgit", kind: "Domestic" },
-  { origin: "ISB", destination: "DXB", from: "Islamabad", to: "Dubai", kind: "International" },
-  { origin: "LHE", destination: "JED", from: "Lahore", to: "Jeddah", kind: "Umrah" },
+  { origin: "ISB", destination: "KDU", from: "Islamabad", to: "Skardu", kind: "Domestic", guide: "/flights/islamabad-skardu" },
+  { origin: "ISB", destination: "GIL", from: "Islamabad", to: "Gilgit", kind: "Domestic", guide: "/flights/islamabad-gilgit" },
+  { origin: "ISB", destination: "DXB", from: "Islamabad", to: "Dubai", kind: "International", guide: "/flights/islamabad-dubai" },
+  { origin: "LHE", destination: "JED", from: "Lahore", to: "Jeddah", kind: "Umrah", guide: "/flights/lahore-jeddah" },
 ] as const;
 
 /**
@@ -95,6 +96,9 @@ export function HomePopularRoutes() {
                   />
                 </span>
               </a>
+              <Link href={route.guide} className="mt-2 inline-flex text-sm text-[var(--color-brand)] hover:underline">
+                Route guide
+              </Link>
             </li>
           ))}
         </ul>
