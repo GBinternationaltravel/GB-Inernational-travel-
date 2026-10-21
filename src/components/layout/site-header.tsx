@@ -38,7 +38,7 @@ export function SiteHeader() {
       )}
     >
       <Container className="flex h-14 items-center justify-between gap-4 lg:h-16">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5 text-left">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-emerald)]">
             <Plane className="h-4.5 w-4.5 text-white" aria-hidden />
           </span>
