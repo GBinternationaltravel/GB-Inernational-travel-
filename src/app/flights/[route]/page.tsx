@@ -3,13 +3,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHero } from "@/components/layout/page-shell";
 import { Section } from "@/components/ui/section";
-import { siteConfig } from "@/config/site";
 import { flightRoutePages, getFlightRoutePage } from "@/data/flight-routes";
+import { PublishedFareList } from "@/components/flights/published-fare-list";
 import { buildResultsHref, defaultSearchFormValues } from "@/lib/flights/search-params";
+import { listPublishedRouteFares } from "@/lib/flights/published-route-fares";
 import { breadcrumbJsonLd, buildMetadata } from "@/lib/seo/metadata";
-import { whatsappHref } from "@/lib/contact-links";
 
 type Props = { params: Promise<{ route: string }> };
+
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return flightRoutePages.map((route) => ({ route: route.slug }));
@@ -38,7 +40,9 @@ export default async function FlightRoutePage({ params }: Props) {
     destination: route.destination,
     returnDate: "",
   });
-  const message = `Hi ${siteConfig.name}, please check a published fare from ${route.originCity} (${route.origin}) to ${route.destinationCity} (${route.destination}).`;
+  const fares = await listPublishedRouteFares(route.origin, route.destination);
+  const originLabel = `${route.originCity} (${route.origin})`;
+  const destinationLabel = `${route.destinationCity} (${route.destination})`;
   const jsonLd = breadcrumbJsonLd([
     { name: "Home", path: "/" },
     { name: "Flights", path: "/flights" },
@@ -59,6 +63,13 @@ export default async function FlightRoutePage({ params }: Props) {
       />
       <Section>
         <div className="max-w-3xl space-y-4 text-sm leading-7 text-[var(--color-ink)]">
+          <PublishedFareList
+            fares={fares}
+            pagePath={`/flights/${route.slug}`}
+            origin={originLabel}
+            destination={destinationLabel}
+            heading={`Published fares, ${originLabel} to ${destinationLabel}`}
+          />
           <p>{route.intro}</p>
           <p>{route.detail}</p>
           <p>
@@ -69,18 +80,10 @@ export default async function FlightRoutePage({ params }: Props) {
           <div className="flex flex-col gap-3 pt-2 sm:flex-row">
             <Link
               href={searchHref}
-              className="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-navy)] px-4 text-sm font-semibold text-white"
+              className="inline-flex h-11 items-center justify-center rounded-md border border-[var(--color-border)] bg-white px-4 text-sm font-semibold text-[var(--color-navy)]"
             >
-              Search {route.origin} to {route.destination}
+              Search {route.origin} to {route.destination} on a date
             </Link>
-            <a
-              href={whatsappHref(siteConfig.contactWhatsApp, message)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-11 items-center justify-center rounded-md bg-[var(--color-emerald)] px-4 text-sm font-semibold text-white"
-            >
-              {siteConfig.contactWhatsAppLabel}
-            </a>
           </div>
           <ul className="list-disc space-y-1 pl-5 pt-4">
             {route.related.map((link) => (

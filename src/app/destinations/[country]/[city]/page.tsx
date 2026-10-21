@@ -23,8 +23,13 @@ import {
   destinationCityJsonLd,
   destinationCityMetadata,
 } from "@/lib/seo/destination-seo";
+import { PublishedFareList } from "@/components/flights/published-fare-list";
+import { listPublishedRouteFares } from "@/lib/flights/published-route-fares";
+import { siteConfig } from "@/config/site";
 
 type Params = { params: Promise<{ country: string; city: string }> };
+
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return destinationCities.map((item) => ({
@@ -54,6 +59,12 @@ export default async function DestinationCityPage({ params }: Params) {
     ? await listPublishedTours({ destination: destination.tourQuery }).catch(() => [])
     : [];
   const schemas = destinationCityJsonLd(destination);
+  const pagePath = destinationPath(destination.countrySlug, destination.citySlug);
+  const fareFrom = destination.relatedFlightSearch.from ?? "ISB";
+  const fareTo = destination.relatedFlightSearch.to;
+  const fares = destination.hasCommercialAirport
+    ? await listPublishedRouteFares(fareFrom, fareTo)
+    : [];
 
   return (
     <>
@@ -82,6 +93,32 @@ export default async function DestinationCityPage({ params }: Params) {
       <Section>
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-8">
+            <PublishedFareList
+              fares={fares}
+              pagePath={pagePath}
+              origin={destination.hasCommercialAirport ? fareFrom : destination.cityName}
+              destination={destination.hasCommercialAirport ? fareTo : destination.cityName}
+              heading={
+                destination.hasCommercialAirport
+                  ? `Published fares, ${fareFrom} to ${fareTo}`
+                  : `Fares to ${destination.cityName}`
+              }
+              emptyCopy={
+                destination.hasCommercialAirport
+                  ? undefined
+                  : `${destination.cityName} has no commercial airport, so this page does not list a fare. Ask us for a quote, including the road transfer. A quote is not a ticket.`
+              }
+              quoteIntro={
+                destination.hasCommercialAirport
+                  ? undefined
+                  : `Hi ${siteConfig.name}, please quote a trip to ${destination.cityName}.`
+              }
+              quoteNote={
+                destination.hasCommercialAirport
+                  ? undefined
+                  : `${destination.cityName} has no commercial airport. Please include the nearest flight and the road transfer.`
+              }
+            />
             <section>
               <h2 className="font-display text-2xl">Quick answer</h2>
               <p className="mt-3 text-[var(--color-muted)]">

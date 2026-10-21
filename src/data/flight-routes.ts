@@ -12,7 +12,7 @@ export type FlightRoutePage = {
   related: Array<{ href: string; label: string }>;
 };
 
-/** Distinct route guides. No prices, durations, or live schedules. */
+/** Distinct route guides. Published fares are loaded from inventory, never invented. */
 export const flightRoutePages: FlightRoutePage[] = [
   {
     slug: "islamabad-skardu",

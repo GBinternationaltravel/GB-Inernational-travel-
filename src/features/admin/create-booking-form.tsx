@@ -468,6 +468,7 @@ export function CreateBookingForm() {
             >
               <FlightResultCard
                 offer={offer}
+                actions="select"
                 priceMode={tripType === "ROUND_TRIP" ? "leg" : "trip"}
                 selectLabel={outbound?.id === offer.id ? "Selected" : "Select outbound"}
                 onSelect={(selected) => {
@@ -492,6 +493,7 @@ export function CreateBookingForm() {
             >
               <FlightResultCard
                 offer={offer}
+                actions="select"
                 priceMode="leg"
                 selectLabel={inbound?.id === offer.id ? "Selected" : "Select return"}
                 onSelect={setInbound}

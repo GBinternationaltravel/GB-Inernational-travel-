@@ -31,11 +31,8 @@ export const siteConfig = {
    * Do not invent a number. NEXT_PUBLIC_CONTACT_WHATSAPP_PK
    */
   contactWhatsAppPakistan: envOr(process.env.NEXT_PUBLIC_CONTACT_WHATSAPP_PK, ""),
-  /**
-   * Shown on the trust strip. Blank stays as the placeholder token until the owner sets a real reply time.
-   * NEXT_PUBLIC_RESPONSE_TIME
-   */
-  responseTime: envOr(process.env.NEXT_PUBLIC_RESPONSE_TIME, "{{RESPONSE_TIME}}"),
+  /** Trust strip only. Blank means the item is not shown. NEXT_PUBLIC_RESPONSE_TIME */
+  responseTime: envOr(process.env.NEXT_PUBLIC_RESPONSE_TIME, ""),
   /** Rendered on About only when the owner publishes them. Do not invent values. */
   legalName: envOr(process.env.NEXT_PUBLIC_LEGAL_NAME, ""),
   officeAddress: envOr(process.env.NEXT_PUBLIC_OFFICE_ADDRESS, ""),

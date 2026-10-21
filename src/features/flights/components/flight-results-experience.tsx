@@ -32,7 +32,7 @@ import {
 } from "@/lib/flights/selection";
 import { cheapestOffer } from "@/lib/flights/round-trip";
 import { FlightFareBar } from "@/features/flights/components/flight-fare-bar";
-import type { SearchFormValues } from "@/lib/flights/search-params";
+import { buildResultsHref, type SearchFormValues } from "@/lib/flights/search-params";
 import type { FlightFiltersState, FlightOffer, FlightSortOption } from "@/types/flight";
 import { cabinClasses } from "@/config/booking";
 
@@ -471,6 +471,8 @@ export function FlightResultsExperience({
                   selectLabel={
                     showingReturn || !isRoundTrip ? "Request booking" : "Select departure"
                   }
+                  pagePath={buildResultsHref(search)}
+                  passengers={passengerLabel}
                 />
               ))}
             </div>
