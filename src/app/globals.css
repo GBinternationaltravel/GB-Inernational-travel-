@@ -90,52 +90,45 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Header brand mark only — does not change page headings. */
+/* Header brand mark only — does not change page headings.
+   The bar is navy, so the dark gradient sits on a light plate and stays readable. */
 .site-brand {
   display: inline-block;
-  border-bottom: 1px solid color-mix(in srgb, #d9a441 38%, transparent);
-  padding-bottom: 0.06em;
-  color: #d9a441;
-  font-family: var(--font-brand), "Times New Roman", Times, serif;
-  font-size: 1.05rem;
+  max-width: 100%;
+  padding: 0.08em 0.4em 0.12em;
+  border-radius: 0.35rem;
+  background-color: #f4f7f8;
+  color: #0f2027;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 16px;
   font-weight: 800;
   line-height: 1.1;
-  letter-spacing: 0.03em;
+  text-align: left;
   white-space: nowrap;
+}
+
+@media (min-width: 420px) {
+  .site-brand {
+    font-size: 20px;
+  }
 }
 
 @supports ((-webkit-background-clip: text) or (background-clip: text)) {
   .site-brand {
-    background-image: linear-gradient(
-      90deg,
-      #d9a441 0%,
-      #f1d58a 34%,
-      #48dbfb 66%,
-      #d9a441 100%
-    );
-    background-clip: text;
-    -webkit-background-clip: text;
+    background-image:
+      linear-gradient(180deg, #0f2027 0%, #203a43 50%, #2c5364 100%),
+      linear-gradient(#f4f7f8, #f4f7f8);
+    background-clip: text, padding-box;
+    -webkit-background-clip: text, padding-box;
     -webkit-text-fill-color: transparent;
     color: transparent;
   }
 }
 
-@media (min-width: 640px) {
-  .site-brand {
-    font-size: 1.35rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .site-brand {
-    font-size: 2rem;
-  }
-}
-
 @media (forced-colors: active) {
   .site-brand {
-    border-bottom-color: CanvasText;
     color: CanvasText;
+    background-color: Canvas;
     background-image: none;
     -webkit-text-fill-color: unset;
   }
